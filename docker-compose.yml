@@ -1,0 +1,27 @@
+services:
+  hapt3d:
+    build:
+      context: .
+      ssh: ["default"]
+    runtime: nvidia
+    # shm_size: '128gb'
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    image: "hapt3d"
+    volumes:
+      # Always mount these
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - /tmp/docker_logs:/var/log
+      # Code
+      - .:/packages/hapt3d
+      # Log folder (if needed)
+      # - /home/elias/hpc_drive/tree_tensorboard_logs:/logs
+      # Data ---> remaps local data folder to docker data folder. If kept the same, no need to change config file for running (maybe not pretty)
+      - /home/matteo/Code/HAPT3D/dataset:/home/matteo/Code/HAPT3D/dataset
+    environment:
+      - DISPLAY
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [compute,utility,graphics]

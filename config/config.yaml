@@ -1,0 +1,45 @@
+experiment:
+  id: "overfit"
+
+data_path: "/media/federico/federico_hdd/hapt3d/HAPT3D/"
+
+network:
+  tanh: True
+  embeddings_only: False
+  skip: "full"
+  name: "MinkUNet14A"
+
+tasks:
+  semantic_segmentation:
+    n_classes: 6
+
+train:
+  ignore_idx: 0
+  max_epoch: 500
+  lr: 0.005
+  batch_size: 1
+  n_gpus: 1
+  workers: 1
+  overfit: True
+  voxel_resolution: 0.003
+
+transform:
+  min_scalefactor: 0.8
+  max_scalefactor: 1.2
+  max_rotation_angle_degree_x: 15
+  max_rotation_angle_degree_y: 15
+  max_rotation_angle_degree_z: 180
+  max_shear: 0.2
+  min_downsample: 0.6
+  max_downsample: 1.0
+  min_contrast: 0.8
+  max_contrast: 1.2
+  max_brightness: 0.2
+  max_hue: 0.15
+  max_saturation: 0.15
+
+val:
+  min_n_points_fruit: 60
+  min_n_points_trunk: 250
+  min_n_points_tree: 1000
+  pq_from_epoch: 50
