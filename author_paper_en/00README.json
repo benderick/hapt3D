@@ -1,0 +1,24 @@
+{
+   "stamp" : true,
+   "sources" : [
+      {
+         "usage" : "toplevel",
+         "filename" : "sodano2025iros.tex"
+      },
+      {
+         "usage" : "ignore",
+         "filename" : "IEEEtran.bst"
+      },
+      {
+         "usage" : "ignore",
+         "filename" : "glorified.bib"
+      },
+      {
+         "usage" : "ignore",
+         "filename" : "new.bib"
+      }
+   ],
+   "process" : {
+      "compiler" : "pdflatex"
+   }
+}

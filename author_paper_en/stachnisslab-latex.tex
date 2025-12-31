@@ -1,0 +1,57 @@
+%% Standard latex definitions used at the Stachniss-Lab
+
+\usepackage{graphics}           
+\usepackage{times}              
+\usepackage{amsmath}            
+\usepackage{amssymb}            
+\usepackage{graphicx}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage{booktabs}
+\usepackage{color}
+\usepackage{listings}
+\usepackage{subfiles}
+\usepackage{hyperref}
+\usepackage[nocompress]{cite} % sorts citations automatically, e.g., "[1],[2],[3]" instead of "[2],[3],[1]".
+\definecolor{instructioncolor}{rgb}{.5,.5,.5}
+
+\newcommand{\instruction}[1]{\textcolor{instructioncolor}{#1}}
+
+% make caption font small for better separation of figures and text
+\usepackage[font=small]{caption}
+
+ %% Key definitions for text elements. USE ONLY THEM! Do not use naked \ref{}.
+\def\secref#1{Sec.~\ref{#1}}
+\def\figref#1{Fig.~\ref{#1}}
+\def\tabref#1{Tab.~\ref{#1}}
+\def\eqref#1{Eq.~(\ref{#1})}
+\def\algref#1{Alg.~\ref{#1}}
+
+%% Other useful macros
+\newcommand\todo[1]{\textbf{[TODO: #1}]}
+
+\makeatletter
+\usepackage{xspace}
+%% the \onedot macro is producing only one dot at line ends.
+%% thus \etal. will not produce et al..
+\DeclareRobustCommand\onedot{\futurelet\@let@token\@onedot}
+\def\@onedot{\ifx\@let@token.\else.\null\fi\xspace}
+\def\eg{e.g\onedot} \def\Eg{E.g\onedot}
+\def\ie{i.e\onedot} \def\Ie{I.e\onedot}
+\def\cf{cf\onedot} \def\Cf{Cf\onedot}
+\def\etc{etc\onedot} \def\vs{vs\onedot}
+\def\wrt{w.r.t\onedot} \def\dof{d.o.f\onedot}
+%% Cyrill does not like emph...
+%\def\etal{\emph{et al}\onedot}
+\def\etal{{et al}\onedot}
+\makeatother
+
+\def\etalcite#1{\etal~\cite{#1}}
+
+\usepackage{array}
+%% this allows to use something like p{2cm} as column type, but with left, center, and right alignment
+\newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+
+

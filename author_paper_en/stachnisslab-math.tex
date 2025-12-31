@@ -1,0 +1,389 @@
+%% Math definitions used at the Stachniss-Lab
+
+% argmax operator
+\def\argmax{\mathop{\rm argmax}}
+
+% argmain operator
+\def\argmin{\mathop{\rm argmin}}
+
+%% Spaces
+\newcommand{\PP}{\mathbb{P}}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\CC}{\mathbb{C}}
+\newcommand{\ZZ}{\mathbb{Z}}
+
+% O-Notation
+\newcommand{\bigO}[1]{$\mathcal{O}(#1)$}
+
+% absolute value
+\newcommand{\abs}[1]{|#1|}
+
+% Norm
+\newcommand{\norm}[1]{\lVert#1\lVert}
+
+% 1/2 as math
+\newcommand{\half}{\frac{1}{2}}
+
+% sign 
+\newcommand{\sign}[0]{{\mbox{sign}}}
+
+% specif matrix dimensions under a matrix
+\newcommand{\mdim}[3]{\stackrel[\mbox{\tiny $#2\!\!\times\!\!#3$}]{}{#1}}
+
+% math boldface #1  
+\renewcommand{\b}[1]{\mbox{\boldmath$#1$}}
+
+% =\b (for compatability)
+\renewcommand{\d}[1]{\b {#1}}
+
+% vector
+\renewcommand{\v}[1]{{\b #1}} 
+
+% matrix
+\newcommand{\m}[1]{{\mbox{{\sffamily\slshape{#1\/}}}}}
+
+% homogeneous vector
+\newcommand{\q}[1]{{{\bf #1}}}
+
+% homogeneous matrix
+\newcommand{\mq}[1]{{\mbox{{\sffamily{#1}}}}}
+
+% transpose vector or matrix
+\newcommand{\tr}[0]{\sf T}              % transpose without ^  
+\newcommand{\trans}[0]{^\tr}            % normal
+\newcommand{\transs}[0]{{'}^\tr}        % ‘ trans
+\newcommand{\transss}[0]{{''}^\tr}      % ‘‘ trans
+\newcommand{\transsss}[0]{{'''}^\tr}    % ’’’ trans
+\newcommand{\transi}[0]{^{-\tr}}        % - trans
+\newcommand{\transa}[0]{^{*\tr}}        % * trans
+
+%inverse 
+\newcommand{\inv}{^{-1}}
+
+% Differential operator d
+\newcommand{\diff}[0]{\mbox{d}}
+
+% degree
+\newcommand{\degrees}{{\mbox{$^\circ$}}}
+
+% Diag 
+\newcommand{\Diag}[0]{{\mbox{Diag}}}
+
+% trace  
+\newcommand{\trace}[0]{{\mbox{tr}\,}}
+
+% rank 
+\newcommand{\rank}[0]{{\mbox{rank}\,}}
+
+% nullspace 
+\newcommand{\nullspace}[0]{{\mbox{null}}}
+
+%atan2 (use with one argument: sin- and cos-part  seperated by , or ;)
+\newcommand{\atan}[1]{\mbox{atan2} \, ({#1})}
+
+%acot2 (use with one argument: sin- and cos-part  seperated by , or ;)
+\newcommand{\acot}[1]{\mbox{acot2} \, ({#1})}
+
+% specify coordinate system of an element
+%#1 = system, #2 = variable
+\newcommand{\cs}[2]{\; ^{#1}\!\,{\mbox{#2}}}
+
+% specify coordinate system of matrix from to
+% #1 = variable, #2 = from, #3 = to,
+\newcommand{\cft}[3]{\; ^{#1}\!\,{\mbox{#2}}_{#3}}
+
+%Rotationmatrix with index and angle: R_i(a)%
+\newcommand{\rot}[2]{\m{R}_{#1}(#2)}
+
+%Rotationmatrix transposed with index and angle:  R^T_i(a)%
+\newcommand{\rott}[2]{\m{R}\trans_{#1}(#2)}
+
+% Jacobian
+\newcommand{\J}{\m J} 
+
+
+%2 vector%
+\newcommand{\zvector}[2]
+  {    \left[
+          \begin{array}{c}
+            {#1} \\ {#2}
+        \end{array}
+       \right] }
+
+%3 vector%
+\newcommand{\dvector}[3]
+  {    \left[
+          \begin{array}{c}
+            {#1} \\ {#2} \\{#3}
+        \end{array}
+       \right] }
+
+%4 vector%
+\newcommand{\vvector}[4]
+  {    \left[
+          \begin{array}{c}
+            {#1} \\ {#2} \\{#3} \\ {#4}
+          \end{array}
+       \right] }
+
+%5 vector%
+\newcommand{\fvector}[5]
+  {    \left[
+          \begin{array}{c}
+            {#1} \\ {#2} \\{#3} \\ {#4}\\ {#5}
+          \end{array}
+       \right] }
+
+%%6 vector%
+\newcommand{\svector}[6]
+  {    \left[
+          \begin{array}{c}
+            {#1} \\ {#2} \\{#3} \\ {#4}\\ {#5}\\ {#6}
+          \end{array}
+       \right] }
+
+%%7 vector%
+\newcommand{\sivector}[7]
+  {    \left[
+          \begin{array}{c}
+            {#1} \\ {#2} \\{#3} \\ {#4}\\ {#5}\\ {#6}\\ {#7}
+          \end{array}
+       \right] }
+
+%%8 vector%
+\newcommand{\avector}[8]
+  {    \left[
+          \begin{array}{c}
+            {#1} \\ {#2} \\{#3} \\ {#4}\\ {#5}\\ {#6}\\ {#7}\\ {#8}
+          \end{array}
+       \right] }
+       
+%%9 vector%
+\newcommand{\nvector}[9]
+  {    \left[
+          \begin{array}{c}
+            {#1} \\ {#2} \\{#3} \\ {#4}\\ {#5}\\ {#6}\\ {#7}\\ {#8}\\ {#9}
+          \end{array}
+       \right] }
+
+
+%2 vector transposed%
+\newcommand{\zvectort}[2]
+  {    \left[
+            {#1} \; {#2}
+       \right] }
+
+
+%3 vector transposed%
+\newcommand{\dvectort}[3]
+  {    \left[
+            {#1} \; {#2}\; {#3}
+       \right] }
+
+%4 vector transposed%
+\newcommand{\vvectort}[4]
+  {    \left[
+            {#1} \; {#2}\; {#3}\; {#4}
+       \right] }
+
+
+%2 x 3 matrix%
+\newcommand{\zdmatrix}[6]
+  {    \left[
+          \begin{array}{ccc}
+            {#1} & {#2} & {#3} \\
+            {#4} & {#5} & {#6} 
+          \end{array}
+       \right] }
+
+%2 x 4 matrix%
+\newcommand{\zvmatrix}[8]
+  {    \left[
+          \begin{array}{cccc}
+            {#1} & {#2} & {#3} & {#4}\\
+            {#5} & {#6} & {#7} & {#8}
+          \end{array}
+       \right] }
+%4 x 2 matrix%
+\newcommand{\vzmatrix}[8]
+  {    \left[
+          \begin{array}{cc}
+            {#1} & {#2} \\ {#3} & {#4}\\
+            {#5} & {#6} \\ {#7} & {#8}
+          \end{array}
+       \right] }
+
+%3 x 2 matrix%
+\newcommand{\dzmatrix}[6]
+  {    \left[
+          \begin{array}{ccc}
+            {#1} & {#2} \\
+            {#3} & {#4} \\
+            {#5} & {#6}
+          \end{array}
+       \right] }
+%
+
+%2 x 2 matrix%
+\newcommand{\zmatrix}[4]
+  {    \left[
+          \begin{array}{cc}
+            {#1} & {#2} \\
+            {#3} & {#4}
+          \end{array}
+       \right] }
+
+%3 x 3 matrix%
+\newcommand{\dmatrix}[9]
+  {    \left[
+          \begin{array}{ccc}
+            {#1} & {#2} & {#3} \\
+            {#4} & {#5} & {#6} \\
+            {#7} & {#8} & {#9}
+          \end{array}
+       \right] }
+
+%4 x 4 matrix%
+%% not allowed, max 9 parameters!
+
+%Determinant 2x2
+\newcommand{\zdet}[4]
+  {    \left|
+          \begin{array}{cc}
+            {#1} & {#2} \\
+            {#3} & {#4}
+          \end{array}
+       \right| }
+
+%Determinant 3x3
+\newcommand{\ddet}[9]
+  {    \left|
+          \begin{array}{ccc}
+            {#1} & {#2} & {#3}\\
+            {#4} & {#5} & {#6}\\
+            {#7} & {#8} & {#9}
+          \end{array}
+       \right| }
+
+
+ 
+% General matrix: #1: #colums, #2: String for elemets
+% incl. //
+\newcommand{\matr}[2]{%
+\left[ \begin{array}{*#1{c} }    #2   \end{array} \right] %
+  }
+
+ % General Determinant:  #1: #colums, #2: String for elemets
+% incl. //
+\newcommand{\dete}[2]{%
+\left| \begin{array}{*#1{c}}    #2   \end{array} \right| %
+  }
+
+ % Boldface abbrevs
+\newcommand{\bA}{\b A}
+\newcommand{\bB}{\b B}
+\newcommand{\bC}{\b C}
+\newcommand{\bD}{\b D}
+\newcommand{\bE}{\b E}
+\newcommand{\bF}{\b F}
+\newcommand{\bG}{\b G}
+\newcommand{\bH}{\b H}
+\newcommand{\bI}{\b I}
+\newcommand{\bJ}{\b J}
+\newcommand{\bK}{\b K}
+\newcommand{\bL}{\b L}
+\newcommand{\bM}{\b M}
+\newcommand{\bN}{\b N}
+\newcommand{\bO}{\b O}
+\newcommand{\bP}{\b P}
+\newcommand{\bQ}{\b Q}
+\newcommand{\bR}{\b R}
+\newcommand{\bS}{\b S}
+\newcommand{\bT}{\b T}
+\newcommand{\bU}{\b U}
+\newcommand{\bV}{\b V}
+\newcommand{\bW}{\b W}
+\newcommand{\bX}{\b X}
+\newcommand{\bY}{\b Y}
+\newcommand{\bZ}{\b Z}
+
+\newcommand{\ba}{\b a}
+\newcommand{\bb}{\b b}
+\newcommand{\bc}{\b c}
+\newcommand{\bd}{\b d}
+\newcommand{\be}{\b e}
+%\newcommand{\bf}{\b f}
+\newcommand{\bg}{\b g}
+\newcommand{\bh}{\b h}
+\newcommand{\bi}{\b i}
+\newcommand{\bj}{\b j}
+\newcommand{\bk}{\b k}
+\newcommand{\bl}{\b l}
+\newcommand{\bm}{\b m}
+\newcommand{\bn}{\b n}
+\newcommand{\bo}{\b o}
+\newcommand{\bp}{\b p}
+\newcommand{\bq}{\b q}
+\newcommand{\br}{\b r}
+\newcommand{\bs}{\b s}
+\newcommand{\bt}{\b t}
+\newcommand{\bu}{\b u}
+\newcommand{\bv}{\b v}
+\newcommand{\bw}{\b w}
+\newcommand{\bx}{\b x}
+\newcommand{\by}{\b y}
+\newcommand{\bz}{\b z}
+
+\newcommand{\dA}{\b A}
+\newcommand{\dB}{\b B}
+\newcommand{\dC}{\b C}
+\newcommand{\dD}{\b D}
+\newcommand{\dF}{\b F}
+\newcommand{\dG}{\b G}
+\newcommand{\dH}{\b H}
+\newcommand{\dI}{\b I}
+\newcommand{\dJ}{\b J}
+\newcommand{\dK}{\b K}
+\newcommand{\dL}{\b L}
+\newcommand{\dM}{\b M}
+\newcommand{\dN}{\b N}
+\newcommand{\dO}{\b O}
+\newcommand{\dP}{\b P}
+\newcommand{\dQ}{\b Q}
+\newcommand{\dR}{\b R}
+\newcommand{\dS}{\b S}
+\newcommand{\dT}{\b T}
+\newcommand{\dU}{\b U}
+\newcommand{\dV}{\b V}
+\newcommand{\dW}{\b W}
+\newcommand{\dX}{\b X}
+\newcommand{\dY}{\b Y}
+\newcommand{\dZ}{\b Z}
+
+\newcommand{\mA}{\m A}
+\newcommand{\mB}{\m B}
+\newcommand{\mC}{\m C}
+\newcommand{\mD}{\m D}
+\newcommand{\mF}{\m F}
+\newcommand{\mG}{\m G}
+\newcommand{\mH}{\m L}
+\newcommand{\mI}{\m I}
+\newcommand{\mJ}{\m J}
+\newcommand{\mK}{\m K}
+\newcommand{\mL}{\m L}
+\newcommand{\mM}{\m M}
+\newcommand{\mN}{\m N}
+\newcommand{\mO}{\m O}
+\newcommand{\mP}{\m P}
+\newcommand{\mQ}{\m Q}
+\newcommand{\mR}{\m R}
+\newcommand{\mS}{\m S}
+\newcommand{\mT}{\m T}
+\newcommand{\mU}{\m U}
+\newcommand{\mV}{\m V}
+\newcommand{\mW}{\m W}
+\newcommand{\mX}{\m X}
+\newcommand{\mY}{\m Y}
+\newcommand{\mZ}{\m Z}
+

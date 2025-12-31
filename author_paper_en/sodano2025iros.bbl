@@ -1,0 +1,306 @@
+\begin{thebibliography}{10}
+
+\bibitem{arad2020jfr}
+B.~Arad, J.~Balendonck, R.~Barth, O.~Ben-Shahar, Y.~Edan, T.~Hellstr{\"o}m,
+  J.~Hemming, P.~Kurtser, O.~Ringdahl, T.~Tielen, and B.~Van~Tujil.
+\newblock Development of a sweet pepper harvesting robot.
+\newblock {\em Journal of Field Robotics (JFR)}, 37(6):1027--1039, 2020.
+
+\bibitem{blok2025cea}
+P.M. Blok, F.~Magistri, C.~Stachniss, H.~Wang, J.~Burridge, and W.~Guo.
+\newblock High-throughput 3d shape completion of potato tubers on a harvester.
+\newblock {\em Computers and Electronics in Agriculture}, 228:109673, 2025.
+
+\bibitem{calvin2010book}
+L.~Calvin.
+\newblock {\em The US produce industry and labor: Facing the future in a global
+  economy}.
+\newblock DIANE Publishing, 2010.
+
+\bibitem{castro2018bhi}
+E.~Castro, J.S. Cardoso, and J.C. Pereira.
+\newblock Elastic deformations for data augmentation in breast cancer mass
+  detection.
+\newblock In {\em Proc. of the Intl. Conf. on Biomedical \& Health Informatics
+  (BHI)}, 2018.
+
+\bibitem{cheng2021cvpr}
+B.~Cheng, I.~Misra, A.G. Schwing, A.~Kirillov, and R.~Girdhar.
+\newblock Masked-attention mask transformer for universal image segmentation.
+\newblock In {\em Proc.~of the IEEE/CVF Conf.~on Computer Vision and Pattern
+  Recognition (CVPR)}, 2022.
+
+\bibitem{choy2019cvpr}
+C.~Choy, J.~Gwak, and S.~Savarese.
+\newblock {4D Spatio-Temporal ConvNets: Minkowski Convolutional Neural
+  Networks}.
+\newblock In {\em Proc.~of the IEEE/CVF Conf.~on Computer Vision and Pattern
+  Recognition (CVPR)}, 2019.
+
+\bibitem{dutagaci2020pm}
+H.~Dutagaci, P.~Rasti, G.~Galopin, and D.~Rousseau.
+\newblock {ROSE-X: an annotated data set for evaluation of 3D plant organ
+  segmentation methods}.
+\newblock {\em Plant methods}, 16:1--14, 2020.
+
+\bibitem{everingham2010ijcv}
+M.~Everingham, L.~Van~Gool, C.~Williams, J.~Winn, and A.~Zisserman.
+\newblock {The Pascal Visual Object Classes (VOC) Challenge}.
+\newblock {\em Intl.~Journal~of Computer Vision (IJCV)}, 88(2):303--338, 2010.
+
+\bibitem{genemola2020compag}
+J.~Gené-Mola, R.~Sanz-Cortiella, J.R. Rosell-Polo, J.R. Morros,
+  J.~Ruiz-Hidalgo, V.~Vilaplana, and E.~Gregorio.
+\newblock Fruit detection and 3d location using instance segmentation neural
+  networks and structure-from-motion photogrammetry.
+\newblock {\em Computers and Electronics in Agriculture}, 169:105165, 2020.
+
+\bibitem{genemola2020db}
+J.~Gené-Mola, R.~Sanz-Cortiella, J.R. Rosell-Polo, J.R. Morros,
+  J.~Ruiz-Hidalgo, V.~Vilaplana, and E.~Gregorio.
+\newblock Fuji-sfm dataset: A collection of annotated images and point clouds
+  for fuji apple detection and location using structure-from-motion
+  photogrammetry.
+\newblock {\em Data in Brief}, 30:105591, 2020.
+
+\bibitem{gueldenring2024ral}
+R.~G\"uldenring, R.E. Andersen, and L.~Nalpantidis.
+\newblock {Zoom in on the Plant: Fine-Grained Analysis of Leaf, Stem, and Vein
+  Instances}.
+\newblock {\em IEEE Robotics and Automation Letters (RA-L)}, 9(2):1588--1595,
+  2024.
+
+\bibitem{hani2020ral}
+N.~H{\"a}ni, P.~Roy, and V.~Isler.
+\newblock Minneapple: a benchmark dataset for apple detection and segmentation.
+\newblock {\em IEEE Robotics and Automation Letters (RA-L)}, 5(2):852--858,
+  2020.
+
+\bibitem{kierdorf2022jfr}
+J.~Kierdorf, L.V. Junker-Frohn, M.~Delaney, M.D. Olave, A.~Burkart,
+  H.~Jaenicke, O.~M\"uller, U.~Rascher, and R.~Roscher.
+\newblock Growliflower: An image time series dataset for growth analysis of
+  cauliflower.
+\newblock {\em Journal of Field Robotics (JFR)}, 40(2):173--192, 2022.
+
+\bibitem{kirillov2019cvpr-ps}
+A.~Kirillov, K.~He, R.~Girshick, C.~Rother, and P.~Doll{\'a}r.
+\newblock {Panoptic Segmentation}.
+\newblock In {\em Proc.~of the IEEE/CVF Conf.~on Computer Vision and Pattern
+  Recognition (CVPR)}, 2019.
+
+\bibitem{lehnert2020jfr}
+C.~Lehnert, C.~McCool, Y.~Sa, and T.~Perez.
+\newblock Performance improvements of a sweet pepper harvesting robot in
+  protected cropping environments.
+\newblock {\em Journal of Field Robotics (JFR)}, 37(7):1197--1223, 2020.
+
+\bibitem{li2018plants}
+B.~Li, J.~Lecourt, and G.~Bishop.
+\newblock Advances in non-destructive early assessment of fruit ripeness
+  towards defining optimal time of harvest and yield prediction—a review.
+\newblock {\em Plants}, 7(1):3, 2018.
+
+\bibitem{lin2020tcsvt}
+K.~Lin, L.~Wang, K.~Luo, Y.~Chen, Z.~Liu, and M.T. Sun.
+\newblock Cross-domain complementary learning using pose for multi-person part
+  segmentation.
+\newblock {\em IEEE Trans.~on Circuits and Systems for Video Technology
+  (TCSVT)}, 31(3):1066--1078, 2020.
+
+\bibitem{loshchilov2017arxiv}
+I.~Loshchilov and F.~Hutter.
+\newblock {Decoupled weight decay regularization}.
+\newblock {\em arXiv preprint}, arXiv:1711.05101, 2017.
+
+\bibitem{lottes2018iros}
+P.~Lottes, J.~Behley, N.~Chebrolu, A.~Milioto, and C.~Stachniss.
+\newblock {Joint Stem Detection and Crop-Weed Classification for Plant-specific
+  Treatment in Precision Farming}.
+\newblock In {\em Proc.~of the IEEE/RSJ Intl.~Conf.~on Intelligent Robots and
+  Systems (IROS)}, 2018.
+
+\bibitem{lottes2019jfr}
+P.~Lottes, J.~Behley, N.~Chebrolu, A.~Milioto, and C.~Stachniss.
+\newblock Robust joint crop-weed classification and stem detection using image
+  sequences.
+\newblock {\em Journal of Field Robotics (JFR)}, 37(1):20--34, 2020.
+
+\bibitem{lu2020compag}
+Y.~Lu and S.~Young.
+\newblock {A survey of public datasets for computer vision tasks in precision
+  agriculture}.
+\newblock {\em Computers and Electronics in Agriculture}, 178:105760, 2020.
+
+\bibitem{magistri2024ral}
+F.~Magistri, Y.~Pan, J.~Bartels, J.~Behley, C.~Stachniss, and C.~Lehnert.
+\newblock {Improving Robotic Fruit Harvesting Within Cluttered Environments
+  Through 3D Shape Completion}.
+\newblock {\em IEEE Robotics and Automation Letters (RA-L)}, 9(8):7357--7364,
+  2024.
+
+\bibitem{malladi2025icra}
+M.~Malladi, N.~Chebrolu, I.~Scacchetti, L.~Lobefaro, T.~Guadagnino, B.~Casseau,
+  H.~Oh, L.~Freissmuth, M.~Karppinen, J.~Schweier, S.~Leutenegger, J.~Behley,
+  C.~Stachniss, and M.~Fallon.
+\newblock {DigiForests: A Longitudinal LiDAR Dataset for Forestry Robotics}.
+\newblock In {\em Proc.~of the IEEE Intl.~Conf.~on Robotics \& Automation
+  (ICRA)}, 2025.
+
+\bibitem{marcuzzi2023ral}
+R.~Marcuzzi, L.~Nunes, L.~Wiesmann, J.~Behley, and C.~Stachniss.
+\newblock {Mask-Based Panoptic LiDAR Segmentation for Autonomous Driving}.
+\newblock {\em IEEE Robotics and Automation Letters (RA-L)}, 8(2):1141--1148,
+  2023.
+
+\bibitem{marks2024iros}
+E.~Marks, J.~B\"omer, F.~Magistri, A.~Sah, J.~Behley, and C.~Stachniss.
+\newblock {BonnBeetClouds3D: A Dataset Towards Point Cloud-Based Organ-Level
+  Phenotyping of Sugar Beet Plants Under Real Field Conditions}.
+\newblock In {\em Proc.~of the IEEE/RSJ Intl.~Conf.~on Intelligent Robots and
+  Systems (IROS)}, 2024.
+
+\bibitem{marks2023ral}
+E.~Marks, M.~Sodano, F.~Magistri, L.~Wiesmann, D.~Desai, R.~Marcuzzi,
+  J.~Behley, and C.~Stachniss.
+\newblock {High precision leaf instance segmentation for phenotyping in point
+  clouds obtained under real field conditions}.
+\newblock {\em IEEE Robotics and Automation Letters (RA-L)}, 8(8):4791--4798,
+  2023.
+
+\bibitem{mcinnes2017joss}
+L.~McInnes, J.~Healy, and S.~Astels.
+\newblock {HDBSCAN: H}ierarchical sensity based clustering.
+\newblock {\em Journal of Open Source Software}, 2(11):205--206, 2017.
+
+\bibitem{milioto2020iros}
+A.~Milioto, J.~Behley, C.~McCool, and C.~Stachniss.
+\newblock {LiDAR Panoptic Segmentation for Autonomous Driving}.
+\newblock In {\em Proc.~of the IEEE/RSJ Intl.~Conf.~on Intelligent Robots and
+  Systems (IROS)}, 2020.
+
+\bibitem{milioto2018icra}
+A.~Milioto, P.~Lottes, and C.~Stachniss.
+\newblock {Real-time Semantic Segmentation of Crop and Weed for Precision
+  Agriculture Robots Leveraging Background Knowledge in CNNs}.
+\newblock In {\em Proc.~of the IEEE Intl.~Conf.~on Robotics \& Automation
+  (ICRA)}, 2018.
+
+\bibitem{montes2020iros}
+H.A. Montes, J.~Le~Louedec, G.~Cielniak, and T.~Duckett.
+\newblock Real-time detection of broccoli crops in 3d point clouds for
+  autonomous robotic harvesting.
+\newblock In {\em Proc.~of the IEEE/RSJ Intl.~Conf.~on Intelligent Robots and
+  Systems (IROS)}, 2020.
+
+\bibitem{neven2019cvpr}
+D.~Neven, B.D. Brabandere, M.~Proesmans, and L.~{Van~Gool}.
+\newblock {Instance Segmentation by Jointly Optimizing Spatial Embeddings and
+  Clustering Bandwidth}.
+\newblock In {\em Proc.~of the IEEE/CVF Conf.~on Computer Vision and Pattern
+  Recognition (CVPR)}, 2019.
+
+\bibitem{pan2023iros}
+Y.~Pan, F.~Magistri, T.~L\"abe, E.~Marks, C.~Smitt, C.~McCool, J.~Behley, and
+  C.~Stachniss.
+\newblock {Panoptic Mapping with Fruit Completion and Pose Estimation for
+  Horticultural Robots}.
+\newblock In {\em Proc.~of the IEEE/RSJ Intl.~Conf.~on Intelligent Robots and
+  Systems (IROS)}, 2023.
+
+\bibitem{perezborrero2020cea}
+I.~Pérez-Borrero, D.~Marín-Santos, M.E. Gegúndez-Arias, and
+  E.~Cortés-Ancos.
+\newblock A fast and accurate deep learning method for strawberry instance
+  segmentation.
+\newblock {\em Computers and Electronics in Agriculture}, 178:105736, 2020.
+
+\bibitem{roggiolani2022icra}
+G.~Roggiolani, M.~Sodano, T.~Guadagnino, F.~Magistri, J.~Behley, and
+  C.~Stachniss.
+\newblock {Hierarchical Approach for Joint Semantic, Plant Instance, and Leaf
+  Instance Segmentation in the Agricultural Domain}.
+\newblock In {\em Proc.~of the IEEE Intl.~Conf.~on Robotics \& Automation
+  (ICRA)}, 2023.
+
+\bibitem{ronneberger2015micc}
+O.~Ronneberger, P.~Fischer, and T.~Brox.
+\newblock {U-Net: Convolutional Networks for Biomedical Image Segmentation}.
+\newblock In {\em Proc. of the Medical Image Computing and Computer-Assisted
+  Intervention (MICCAI)}, 2015.
+
+\bibitem{schunck2021po}
+D.~Schunck, F.~Magistri, R.A. Rosu, A.~Corneli{\ss}en, N.~Chebrolu, S.~Paulus,
+  J.~L{\'e}on, S.~Behnke, C.~Stachniss, H.~Kuhlmann, and L.~Klingbeil.
+\newblock Pheno4d: A spatio-temporal dataset of maize and tomato plant point
+  clouds for phenotyping and advanced plant analysis.
+\newblock {\em Plos One}, 16(8):e0256340, 2021.
+
+\bibitem{sirohi2021tro}
+K.~Sirohi, R.~Mohan, D.~B{\"u}scher, W.~Burgard, and A.~Valada.
+\newblock {EfficientLPS: Efficient LiDAR Panoptic Segmentation}.
+\newblock {\em IEEE Trans.~on Robotics (TRO)}, 38(3):1894--1914, 2021.
+
+\bibitem{smitt2024ral-pagn}
+C.~Smitt, M.~Halstead, P.~Zimmer, T.~L\"abe, E.~Guclu, C.~Stachniss, and
+  C.~McCool.
+\newblock {PAg-NeRF: Towards fast and efficient end-to-end panoptic 3D
+  representations for agricultural robotics}.
+\newblock {\em IEEE Robotics and Automation Letters (RA-L)}, 9(1):907--914,
+  2024.
+
+\bibitem{smitt2021icra}
+C.~Smitt, M.~Halstead, T.~Zaenker, M.~Bennewitz, and C.~McCool.
+\newblock {PATHoBot}: {A} robot for glasshouse crop phenotyping and
+  intervention.
+\newblock In {\em Proc.~of the IEEE Intl.~Conf.~on Robotics \& Automation
+  (ICRA)}, 2021.
+
+\bibitem{triggs1999iccv}
+B.~Triggs, P.F. McLauchlan, R.I. Hartley, and A.W. Fitzgibbon.
+\newblock Bundle adjustment - a modern synthesis.
+\newblock In {\em Proc. of the Intl.~Workshop on Vision Algorithms: Theory and
+  Practice}, 1999.
+
+\bibitem{vanklompenburg2020cea}
+T.~van Klompenburg, A.~Kassahun, and C.~Catal.
+\newblock Crop yield prediction using machine learning: A systematic literature
+  review.
+\newblock {\em Computers and Electronics in Agriculture}, 177:105709, 2020.
+
+\bibitem{weyler2024pami}
+J.~Weyler, F.~Magistri, E.~Marks, Y.L. Chong, M.~Sodano, G.~Roggiolani,
+  N.~Chebrolu, C.~Stachniss, and J.~Behley.
+\newblock Phenobench: A large dataset and benchmarks for semantic image
+  interpretation in the agricultural domain.
+\newblock {\em IEEE Trans.~on Pattern Analysis and Machine Intelligence
+  (TPAMI)}, 46(12):9583--9594, 2024.
+
+\bibitem{weyler2022ral}
+J.~Weyler, J.~Quakernack, P.~Lottes, J.~Behley, and C.~Stachniss.
+\newblock Joint plant and leaf instance segmentation on field-scale uav
+  imagery.
+\newblock {\em IEEE Robotics and Automation Letters (RA-L)}, 7(2):3787--3794,
+  2022.
+
+\bibitem{xu2019ei}
+X.~Xu, P.~Gao, X.~Zhu, W.~Guo, J.~Ding, C.~Li, M.~Zhu, and X.~Wu.
+\newblock Design of an integrated climatic assessment indicator (icai) for
+  wheat production: A case study in jiangsu province, china.
+\newblock {\em Ecological Indicators}, 101:943--953, 2019.
+
+\bibitem{zhou2021cvpr-pplp}
+Z.~Zhou, Y.~Zhang, and H.~Foroosh.
+\newblock {Panoptic-PolarNet: Proposal-Free LiDAR Point Cloud Panoptic
+  Segmentation}.
+\newblock In {\em Proc.~of the IEEE/CVF Conf.~on Computer Vision and Pattern
+  Recognition (CVPR)}, 2021.
+
+\bibitem{zhu2024scidata}
+J.~Zhu, R.~Zhai, H.~Ren, K.~Xie, A.~Du, X.~He, C.~Cui, Y.~Wang, J.~Ye, J.~Wang,
+  X.~Jiang, Y.~Wang, C.~Huang, and W.~Yang.
+\newblock {Crops3D: a diverse 3D crop dataset for realistic perception and
+  segmentation toward agricultural applications}.
+\newblock {\em Scientific Data}, 11, 2024.
+
+\end{thebibliography}
