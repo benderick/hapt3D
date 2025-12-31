@@ -36,7 +36,7 @@ def main(config, weights, checkpoint):
         ckpt = torch.load(checkpoint)
         if 'hyper_parameters' in ckpt.keys():
             cfg = ckpt['hyper_parameters']
-            cfg['data_path'] = '/home/matteo/Code/HAPT3D/dataset'
+            cfg['data_path'] = 'data/hopt3d'
 
 
     # Load data and model

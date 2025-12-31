@@ -2,7 +2,7 @@ experiment:
   id: "full_1"
 
 
-data_path: "/home/matteo/Code/HAPT3D/dataset"
+data_path: "data/hopt3d"
 
 network:
   tanh: True

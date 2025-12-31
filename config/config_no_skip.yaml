@@ -1,7 +1,7 @@
 experiment:
   id: "no_skip_ex1"
 
-data_path: "/media/federico/federico_hdd/hapt3d/HAPT3D/"
+data_path: "data/hopt3d"
 
 network:
   tanh: True
