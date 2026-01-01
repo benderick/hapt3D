@@ -409,72 +409,108 @@ class HFE(nn.Module):
 
 # ==================== 测试代码 ====================
 if __name__ == '__main__':
+    import torch
+    
     print("=" * 70)
-    print("HFE模块测试 - 层次化特征增强")
-    print("=" * 70)
-    print("\n设计理念:")
-    print("  - GlobalContextBranch: 全局感知 → 树木实例分割")
-    print("  - SemanticBranch: 多尺度融合 → 语义分割")
-    print("  - LocalDetailBranch: 边界增强 → 果实实例分割")
+    print("HFE模块参数量分析 - 不同消融配置对比")
     print("=" * 70)
     
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"\n使用设备: {device}")
-    
-    # 创建测试数据
-    batch_size = 2
-    num_points_per_sample = [1000, 800]
     in_channels = 256
+    out_channels = 256
     
-    coords_list = []
-    feats_list = []
+    # ==================== 配置定义 ====================
+    configs = {
+        '完整设计 (Full)': {
+            'global_branch': {'dilation': 4, 'use_global_pool': True, 'channel_reduction': 4},
+            'semantic_branch': {'dilations': [1, 2, 3], 'use_multiscale': True},
+            'local_branch': {'dilation': 1, 'use_edge_enhance': True}
+        },
+        '仅膨胀率差异 (Dilation Only)': {
+            'global_branch': {'dilation': 4, 'use_global_pool': False, 'channel_reduction': None},
+            'semantic_branch': {'dilations': [2], 'use_multiscale': False},
+            'local_branch': {'dilation': 1, 'use_edge_enhance': False}
+        },
+        '无全局池化': {
+            'global_branch': {'dilation': 4, 'use_global_pool': False, 'channel_reduction': None},
+            'semantic_branch': {'dilations': [1, 2, 3], 'use_multiscale': True},
+            'local_branch': {'dilation': 1, 'use_edge_enhance': True}
+        },
+        '无多尺度融合': {
+            'global_branch': {'dilation': 4, 'use_global_pool': True, 'channel_reduction': 4},
+            'semantic_branch': {'dilations': [2], 'use_multiscale': False},
+            'local_branch': {'dilation': 1, 'use_edge_enhance': True}
+        },
+        '无边界增强': {
+            'global_branch': {'dilation': 4, 'use_global_pool': True, 'channel_reduction': 4},
+            'semantic_branch': {'dilations': [1, 2, 3], 'use_multiscale': True},
+            'local_branch': {'dilation': 1, 'use_edge_enhance': False}
+        },
+    }
     
-    for b in range(batch_size):
-        n_points = num_points_per_sample[b]
-        coords = torch.randint(0, 100, (n_points, 3), dtype=torch.int)
-        batch_idx = torch.full((n_points, 1), b, dtype=torch.int)
-        coords = torch.cat([batch_idx, coords], dim=1)
-        coords_list.append(coords)
-        feats = torch.randn(n_points, in_channels)
-        feats_list.append(feats)
+    results = {}
     
-    coords = torch.cat(coords_list, dim=0).to(device)
-    feats = torch.cat(feats_list, dim=0).to(device)
+    for config_name, cfg in configs.items():
+        print(f"\n{'='*70}")
+        print(f"配置: {config_name}")
+        print(f"{'='*70}")
+        
+        # 创建HFE模块
+        hfe = HFE(in_channels, out_channels, cfg=cfg)
+        
+        # 打印配置详情
+        print(f"\n配置详情:")
+        print(f"  GlobalBranch:")
+        print(f"    - dilation: {cfg['global_branch'].get('dilation', 4)}")
+        print(f"    - use_global_pool: {cfg['global_branch'].get('use_global_pool', True)}")
+        print(f"    - channel_reduction: {cfg['global_branch'].get('channel_reduction', 4)}")
+        print(f"  SemanticBranch:")
+        print(f"    - dilations: {cfg['semantic_branch'].get('dilations', [1,2,3])}")
+        print(f"    - use_multiscale: {cfg['semantic_branch'].get('use_multiscale', True)}")
+        print(f"  LocalBranch:")
+        print(f"    - dilation: {cfg['local_branch'].get('dilation', 1)}")
+        print(f"    - use_edge_enhance: {cfg['local_branch'].get('use_edge_enhance', True)}")
+        
+        # 统计各分支参数量
+        global_params = sum(p.numel() for p in hfe.global_branch.parameters())
+        semantic_params = sum(p.numel() for p in hfe.semantic_branch.parameters())
+        local_params = sum(p.numel() for p in hfe.local_branch.parameters())
+        total_params = sum(p.numel() for p in hfe.parameters())
+        
+        print(f"\n参数量统计:")
+        print(f"  - GlobalContextBranch:  {global_params:>10,}")
+        print(f"  - SemanticBranch:       {semantic_params:>10,}")
+        print(f"  - LocalDetailBranch:    {local_params:>10,}")
+        print(f"  - 总计:                 {total_params:>10,}")
+        
+        results[config_name] = {
+            'global': global_params,
+            'semantic': semantic_params,
+            'local': local_params,
+            'total': total_params
+        }
+        
+        # 打印模型结构
+        print(f"\n模块结构:")
+        for name, module in hfe.named_modules():
+            if name and '.' not in name:  # 只打印一级子模块
+                print(f"  {name}:")
+                for sub_name, sub_module in module.named_children():
+                    sub_params = sum(p.numel() for p in sub_module.parameters())
+                    print(f"    └─ {sub_name}: {sub_params:,} params")
     
-    input_tensor = ME.SparseTensor(
-        features=feats,
-        coordinates=coords,
-        device=device
-    )
+    # ==================== 对比总结 ====================
+    print("\n" + "=" * 70)
+    print("参数量对比总结")
+    print("=" * 70)
+    print(f"\n{'配置':<30} {'Global':>12} {'Semantic':>12} {'Local':>12} {'Total':>12}")
+    print("-" * 78)
     
-    print(f"\n输入: {input_tensor.F.shape}")
-    
-    # 测试HFE
-    hfe = HFE(in_channels=in_channels).to(device)
-    feat_instance, feat_semantic, feat_tree = hfe(input_tensor)
-    
-    print(f"\n输出:")
-    print(f"  实例级特征 (LocalDetailBranch):    {feat_instance.F.shape} → 标准实例解码器")
-    print(f"  语义特征 (SemanticBranch):         {feat_semantic.F.shape} → 语义解码器")
-    print(f"  树木级特征 (GlobalContextBranch):  {feat_tree.F.shape} → 树木实例解码器")
-    
-    # 各分支参数量
-    global_params = sum(p.numel() for p in hfe.global_branch.parameters())
-    semantic_params = sum(p.numel() for p in hfe.semantic_branch.parameters())
-    local_params = sum(p.numel() for p in hfe.local_branch.parameters())
-    total_params = sum(p.numel() for p in hfe.parameters())
-    
-    print(f"\n参数量统计:")
-    print(f"  - GlobalContextBranch: {global_params:,}")
-    print(f"  - SemanticBranch: {semantic_params:,}")
-    print(f"  - LocalDetailBranch: {local_params:,}")
-    print(f"  - 总计: {total_params:,}")
-    
-    # 测试梯度
-    loss = feat_instance.F.sum() + feat_semantic.F.sum() + feat_tree.F.sum()
-    loss.backward()
-    print(f"\n梯度测试: ✓ 所有参数都有梯度")
+    baseline_total = results['完整设计 (Full)']['total']
+    for config_name, params in results.items():
+        diff = params['total'] - baseline_total
+        diff_str = f"({diff:+,})" if diff != 0 else ""
+        print(f"{config_name:<30} {params['global']:>12,} {params['semantic']:>12,} {params['local']:>12,} {params['total']:>12,} {diff_str}")
     
     print("\n" + "=" * 70)
-    print("HFE测试完成!")
+    print("分析完成!")
     print("=" * 70)

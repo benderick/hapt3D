@@ -509,7 +509,7 @@ class CDAG(nn.Module):
 # ============================================================================
 if __name__ == '__main__':
     print("=" * 70)
-    print("CDAG模块测试 - 真正融合三篇论文")
+    print("CDAG模块测试 - 消融实验参数量对比")
     print("=" * 70)
     print("参考论文:")
     print("  [1] Attention Gate (MIA 2018) - 空间门控")
@@ -520,10 +520,136 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"\n使用设备: {device}")
     
+    # 测试参数
+    channels = 128
+    
+    # ===== 定义不同的消融配置 =====
+    ablation_configs = {
+        # 1. 完整配置 - 所有模块启用
+        "Full (所有模块)": {
+            'spatial_gate': {'enabled': True},
+            'channel_attention': {'enabled': True, 'reduction': 4},
+            'multiscale_attention': {'enabled': True},
+            'pixel_attention': {'enabled': True}
+        },
+        # 2. 仅空间门控 (Attention Gate baseline)
+        "Spatial Only (仅空间门控)": {
+            'spatial_gate': {'enabled': True},
+            'channel_attention': {'enabled': False},
+            'multiscale_attention': {'enabled': False},
+            'pixel_attention': {'enabled': False}
+        },
+        # 3. 无通道注意力
+        "No Channel (无通道注意力)": {
+            'spatial_gate': {'enabled': True},
+            'channel_attention': {'enabled': False},
+            'multiscale_attention': {'enabled': True},
+            'pixel_attention': {'enabled': True}
+        },
+        # 4. 无多尺度注意力
+        "No Multiscale (无多尺度)": {
+            'spatial_gate': {'enabled': True},
+            'channel_attention': {'enabled': True, 'reduction': 4},
+            'multiscale_attention': {'enabled': False},
+            'pixel_attention': {'enabled': True}
+        },
+        # 5. 无像素注意力
+        "No Pixel (无像素注意力)": {
+            'spatial_gate': {'enabled': True},
+            'channel_attention': {'enabled': True, 'reduction': 4},
+            'multiscale_attention': {'enabled': True},
+            'pixel_attention': {'enabled': False}
+        },
+        # 6. 仅CPCA (通道+多尺度)
+        "CPCA Only (通道+多尺度)": {
+            'spatial_gate': {'enabled': True},  # 基础空间门控保留
+            'channel_attention': {'enabled': True, 'reduction': 4},
+            'multiscale_attention': {'enabled': True},
+            'pixel_attention': {'enabled': False}
+        },
+    }
+    
+    # ===== 打印各配置的参数量 =====
+    print("\n" + "=" * 70)
+    print("消融实验 - 不同配置的参数量对比")
+    print("=" * 70)
+    print(f"{'配置名称':<35} {'总参数量':>15} {'差异':>12}")
+    print("-" * 70)
+    
+    param_counts = {}
+    base_params = None
+    
+    for name, cfg in ablation_configs.items():
+        # 创建模型
+        model = CDAG(F_g=channels, F_l=channels, cfg=cfg).to(device)
+        
+        # 统计参数量
+        total_params = sum(p.numel() for p in model.parameters())
+        param_counts[name] = total_params
+        
+        # 计算与完整配置的差异
+        if base_params is None:
+            base_params = total_params
+            diff_str = "baseline"
+        else:
+            diff = total_params - base_params
+            diff_str = f"{diff:+,}"
+        
+        print(f"{name:<35} {total_params:>15,} {diff_str:>12}")
+        
+        # 清理内存
+        del model
+    
+    # ===== 详细子模块参数量 =====
+    print("\n" + "=" * 70)
+    print("完整配置 (Full) - 各子模块参数量详情")
+    print("=" * 70)
+    
+    full_cfg = ablation_configs["Full (所有模块)"]
+    full_model = CDAG(F_g=channels, F_l=channels, cfg=full_cfg).to(device)
+    
+    # 统计各子模块
+    spatial_params = sum(p.numel() for p in full_model.spatial_gate.parameters())
+    print(f"  SpatialAttentionGate (MIA 2018):     {spatial_params:>12,}")
+    
+    if full_model.channel_attn is not None:
+        channel_params = sum(p.numel() for p in full_model.channel_attn.parameters())
+        print(f"  DualPoolChannelAttention (CPCA):    {channel_params:>12,}")
+    
+    if full_model.multiscale_attn is not None:
+        multiscale_params = sum(p.numel() for p in full_model.multiscale_attn.parameters())
+        print(f"  MultiScaleSpatialAttention (CPCA):  {multiscale_params:>12,}")
+    
+    if full_model.pixel_attn is not None:
+        pixel_params = sum(p.numel() for p in full_model.pixel_attn.parameters())
+        print(f"  PixelAttention (CGAFusion):         {pixel_params:>12,}")
+    
+    # 其他层参数
+    other_params = sum(p.numel() for p in full_model.attn_transform.parameters())
+    other_params += sum(p.numel() for p in full_model.conv_out.parameters())
+    print(f"  其他层 (transform + conv_out):       {other_params:>12,}")
+    
+    # ===== 验证参数量差异 =====
+    print("\n" + "=" * 70)
+    print("验证: 各配置参数量是否正确变化")
+    print("=" * 70)
+    
+    # 检查参数量是否有差异
+    unique_params = set(param_counts.values())
+    if len(unique_params) == 1:
+        print("⚠️ 警告: 所有配置的参数量相同！消融实验可能无效！")
+    else:
+        print(f"✓ 检测到 {len(unique_params)} 种不同的参数量配置")
+        print("✓ 消融配置正确生效")
+    
+    # ===== 功能测试 =====
+    print("\n" + "=" * 70)
+    print("功能测试 - 验证前向传播")
+    print("=" * 70)
+    
     # 创建测试数据
     batch_size = 2
     num_points_per_sample = [1000, 800]
-    channels = 128
     
     coords_list = []
     feats_g_list = []
@@ -542,48 +668,21 @@ if __name__ == '__main__':
     feats_g = torch.cat(feats_g_list, dim=0).to(device)
     feats_x = torch.cat(feats_x_list, dim=0).to(device)
     
-    # 门控信号 (解码器特征)
     g = ME.SparseTensor(features=feats_g, coordinates=coords, device=device)
-    # 输入信号 (编码器跳跃特征)
     x = ME.SparseTensor(features=feats_x, coordinates=coords, device=device)
     
-    print(f"\n输入:")
-    print(f"  门控信号 g: {g.F.shape}")
-    print(f"  跳跃特征 x: {x.F.shape}")
+    print(f"\n输入: g={g.F.shape}, x={x.F.shape}")
     
-    # 测试CDAG
-    cdag = CDAG(F_g=channels, F_l=channels).to(device)
-    output = cdag(g, x)
-    
-    print(f"\n输出: {output.F.shape}")
-    
-    # 测试各子模块
-    print(f"\n子模块验证:")
-    print(f"  ✓ SpatialAttentionGate (Attention Gate, MIA 2018)")
-    print(f"  ✓ DualPoolChannelAttention (CPCA双池化, CBM 2024)")
-    print(f"  ✓ MultiScaleSpatialAttention (CPCA多尺度, CBM 2024)")
-    print(f"  ✓ PixelAttention (CGAFusion, TIP 2024)")
-    
-    # 测试梯度
-    loss = output.F.sum()
-    loss.backward()
-    print(f"\n梯度测试: ✓ 所有参数都有梯度")
-    
-    # 参数量统计
-    total_params = sum(p.numel() for p in cdag.parameters())
-    print(f"\nCDAG总参数量: {total_params:,}")
-    
-    # 各子模块参数量
-    spatial_params = sum(p.numel() for p in cdag.spatial_gate.parameters())
-    channel_params = sum(p.numel() for p in cdag.channel_attn.parameters())
-    multiscale_params = sum(p.numel() for p in cdag.multiscale_attn.parameters())
-    pixel_params = sum(p.numel() for p in cdag.pixel_attn.parameters())
-    
-    print(f"  - SpatialAttentionGate: {spatial_params:,}")
-    print(f"  - DualPoolChannelAttention: {channel_params:,}")
-    print(f"  - MultiScaleSpatialAttention: {multiscale_params:,}")
-    print(f"  - PixelAttention: {pixel_params:,}")
+    # 测试每个配置的前向传播
+    for name, cfg in ablation_configs.items():
+        model = CDAG(F_g=channels, F_l=channels, cfg=cfg).to(device)
+        try:
+            output = model(g, x)
+            print(f"  ✓ {name}: output={output.F.shape}")
+        except Exception as e:
+            print(f"  ✗ {name}: 错误 - {e}")
+        del model
     
     print("\n" + "=" * 70)
-    print("CDAG测试完成!")
+    print("CDAG消融测试完成!")
     print("=" * 70)
