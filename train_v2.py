@@ -254,7 +254,8 @@ def main(config, weights, checkpoint, lr, epochs, batch_size, gpus, seed, debug)
     
     # === 设置训练器 ===
     trainer = Trainer(
-        gpus=cfg.get('train.n_gpus', 1),
+        accelerator='gpu',
+        devices=cfg.get('train.n_gpus', 1),
         logger=tb_logger,
         resume_from_checkpoint=checkpoint,
         max_epochs=cfg.max_epochs,
@@ -263,6 +264,8 @@ def main(config, weights, checkpoint, lr, epochs, batch_size, gpus, seed, debug)
         callbacks=callbacks,
         deterministic=True  # 确保可重复性
     )
+    
+    torch.set_float32_matmul_precision('medium')
     
     # === 开始训练 ===
     print("[INFO] 开始训练...")

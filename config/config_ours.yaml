@@ -8,9 +8,6 @@ experiment:
   description: "本文完整方法: HFE + CDAG + HCL"
   seed: 42                           # 随机种子
 
-# 兼容性字段
-data_path: "data/hopt3d"
-
 # ==================== 数据配置 ====================
 data:
   path: "data/hopt3d"                # 数据集路径
@@ -20,7 +17,6 @@ data:
 
 # ==================== 网络配置 ====================
 network:
-  name: "MinkUNet14A"                # 网络名称 (兼容旧代码)
   backbone: "MinkUNet14A"            # 骨干网络: MinkUNet14A, MinkUNet18A, MinkUNet34A
   in_channels: 3                     # 输入通道数 (RGB)
   out_channels: 256                  # 编码器输出通道数

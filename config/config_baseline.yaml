@@ -8,9 +8,6 @@ experiment:
   description: "基线方法: 纯MinkUNet14A骨干网络"
   seed: 42
 
-# 兼容性字段
-data_path: "data/hopt3d"
-
 # ==================== 数据配置 ====================
 data:
   path: "data/hopt3d"
@@ -20,7 +17,6 @@ data:
 
 # ==================== 网络配置 ====================
 network:
-  name: "MinkUNet14A"                # 网络名称 (兼容旧代码)
   backbone: "MinkUNet14A"
   in_channels: 3
   out_channels: 256
