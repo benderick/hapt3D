@@ -32,7 +32,7 @@ class MinkUNetWithModules(ResNetBase):
     PLANES = None
     DILATIONS = (1, 1, 1, 1, 1, 1, 1, 1)
     LAYERS = (2, 2, 2, 2, 2, 2, 2, 2)
-    PLANES = (32, 64, 128, 256, 128, 128, 96, 96)  # 默认与MinkUNet18A一致
+    PLANES = (32, 64, 128, 256, 256, 128, 96, 96)
     INIT_DIM = 32
     OUT_TENSOR_STRIDE = 1
 
@@ -76,6 +76,7 @@ class MinkUNetWithModules(ResNetBase):
             # ConfigManager对象
             self.use_hfe = cfg.get('network.hfe.enabled', False)
             self.use_cdag = cfg.get('network.cdag.enabled', False)
+            print(self.use_cdag)
             self.hfe_cfg = cfg.get('network.hfe', {}) or {}
             self.cdag_cfg = cfg.get('network.cdag', {}) or {}
         else:
@@ -83,14 +84,6 @@ class MinkUNetWithModules(ResNetBase):
             self.use_cdag = False
             self.hfe_cfg = {}
             self.cdag_cfg = {}
-        
-        # ==================== 判断是否使用跨解码器特征融合 ====================
-        # 跨解码器融合: 实例解码器会融合语义解码器的特征
-        # 只有当HFE启用时才需要跨解码器融合（因为HFE为不同解码器生成专门化特征）
-        # 如果所有模块都禁用，则使用基线模式（不做跨解码器融合）
-        self.use_cross_decoder_fusion = self.use_hfe
-        
-        print(f"[INFO] 模块状态: HFE={self.use_hfe}, CDAG={self.use_cdag}, 跨解码器融合={self.use_cross_decoder_fusion}")
 
     def network_initialization(self, in_channels, out_channels, D):
         """网络初始化"""
@@ -203,22 +196,12 @@ class MinkUNetWithModules(ResNetBase):
 
         # ==================== 实例解码器 ====================
         if self.instance_decoder:
-            # 根据是否使用跨解码器融合来决定输入通道数
-            # 跨解码器融合: cat(decoder_feat, encoder_feat, other_decoder_feat) -> 3个特征
-            # 基线模式: cat(decoder_feat, encoder_feat) -> 2个特征
-            if self.use_cross_decoder_fusion:
-                # 使用跨解码器融合 (HFE模式)
-                inplanes_multiplier = 2  # decoder_feat + other_decoder_feat
-            else:
-                # 基线模式
-                inplanes_multiplier = 1  # 只有decoder_feat
-            
             # 树木实例解码器 (ins2)
             self.convtr4p16s2_ins2 = ME.MinkowskiConvolutionTranspose(
                 self.inplanes_enc, self.PLANES[4], kernel_size=2, stride=2, dimension=D)
             self.bntr4_ins2 = ME.MinkowskiBatchNorm(self.PLANES[4])
 
-            inplanes_ins2 = inplanes_multiplier*self.PLANES[4] + self.PLANES[2] * self.BLOCK.expansion
+            inplanes_ins2 = 2*self.PLANES[4] + self.PLANES[2] * self.BLOCK.expansion
             self.inplanes = inplanes_ins2
             self.block5_ins2 = self._make_layer(self.BLOCK, self.PLANES[4], self.LAYERS[4])
             
@@ -226,7 +209,7 @@ class MinkUNetWithModules(ResNetBase):
                 self.inplanes, self.PLANES[5], kernel_size=2, stride=2, dimension=D)
             self.bntr5_ins2 = ME.MinkowskiBatchNorm(self.PLANES[5])
 
-            inplanes_ins2 = inplanes_multiplier*self.PLANES[5] + self.PLANES[1] * self.BLOCK.expansion
+            inplanes_ins2 = 2*self.PLANES[5] + self.PLANES[1] * self.BLOCK.expansion
             self.inplanes = inplanes_ins2
             self.block6_ins2 = self._make_layer(self.BLOCK, self.PLANES[5], self.LAYERS[5])
             
@@ -234,7 +217,7 @@ class MinkUNetWithModules(ResNetBase):
                 self.inplanes, self.PLANES[6], kernel_size=2, stride=2, dimension=D)
             self.bntr6_ins2 = ME.MinkowskiBatchNorm(self.PLANES[6])
 
-            inplanes_ins2 = inplanes_multiplier*self.PLANES[6] + self.PLANES[0] * self.BLOCK.expansion
+            inplanes_ins2 = 2*self.PLANES[6] + self.PLANES[0] * self.BLOCK.expansion
             self.inplanes = inplanes_ins2
             self.block7_ins2 = self._make_layer(self.BLOCK, self.PLANES[6], self.LAYERS[6])
             
@@ -242,7 +225,7 @@ class MinkUNetWithModules(ResNetBase):
                 self.inplanes, self.PLANES[7], kernel_size=2, stride=2, dimension=D)
             self.bntr7_ins2 = ME.MinkowskiBatchNorm(self.PLANES[7])
 
-            inplanes_ins2 = inplanes_multiplier*self.PLANES[7] + self.INIT_DIM
+            inplanes_ins2 = 2*self.PLANES[7] + self.INIT_DIM
             self.inplanes = inplanes_ins2
             self.block8_ins2 = self._make_layer(self.BLOCK, self.PLANES[7], self.LAYERS[7])
 
@@ -255,7 +238,7 @@ class MinkUNetWithModules(ResNetBase):
                 self.inplanes_enc, self.PLANES[4], kernel_size=2, stride=2, dimension=D)
             self.bntr4_ins1 = ME.MinkowskiBatchNorm(self.PLANES[4])
 
-            inplanes_ins1 = inplanes_multiplier*self.PLANES[4] + self.PLANES[2] * self.BLOCK.expansion
+            inplanes_ins1 = 2*self.PLANES[4] + self.PLANES[2] * self.BLOCK.expansion
             self.inplanes = inplanes_ins1
             self.block5_ins1 = self._make_layer(self.BLOCK, self.PLANES[4], self.LAYERS[4])
             
@@ -263,7 +246,7 @@ class MinkUNetWithModules(ResNetBase):
                 self.inplanes, self.PLANES[5], kernel_size=2, stride=2, dimension=D)
             self.bntr5_ins1 = ME.MinkowskiBatchNorm(self.PLANES[5])
 
-            inplanes_ins1 = inplanes_multiplier*self.PLANES[5] + self.PLANES[1] * self.BLOCK.expansion
+            inplanes_ins1 = 2*self.PLANES[5] + self.PLANES[1] * self.BLOCK.expansion
             self.inplanes = inplanes_ins1
             self.block6_ins1 = self._make_layer(self.BLOCK, self.PLANES[5], self.LAYERS[5])
             
@@ -271,7 +254,7 @@ class MinkUNetWithModules(ResNetBase):
                 self.inplanes, self.PLANES[6], kernel_size=2, stride=2, dimension=D)
             self.bntr6_ins1 = ME.MinkowskiBatchNorm(self.PLANES[6])
 
-            inplanes_ins1 = inplanes_multiplier*self.PLANES[6] + self.PLANES[0] * self.BLOCK.expansion
+            inplanes_ins1 = 2*self.PLANES[6] + self.PLANES[0] * self.BLOCK.expansion
             self.inplanes = inplanes_ins1
             self.block7_ins1 = self._make_layer(self.BLOCK, self.PLANES[6], self.LAYERS[6])
             
@@ -279,7 +262,7 @@ class MinkUNetWithModules(ResNetBase):
                 self.inplanes, self.PLANES[7], kernel_size=2, stride=2, dimension=D)
             self.bntr7_ins1 = ME.MinkowskiBatchNorm(self.PLANES[7])
 
-            inplanes_ins1 = inplanes_multiplier*self.PLANES[7] + self.INIT_DIM
+            inplanes_ins1 = 2*self.PLANES[7] + self.INIT_DIM
             self.inplanes = inplanes_ins1
             self.block8_ins1 = self._make_layer(self.BLOCK, self.PLANES[7], self.LAYERS[7])
 
@@ -392,12 +375,8 @@ class MinkUNetWithModules(ResNetBase):
                 out_b3p8_tree = self._apply_cdag(self.cdag_tree_s8, out_skip_tree1, out_b3p8)
             else:
                 out_b3p8_tree = out_b3p8
-            
-            # 根据是否使用跨解码器融合来决定特征拼接方式
-            if self.use_cross_decoder_fusion:
-                out_ins2 = ME.cat(out_skip_tree1, out_b3p8_tree, out_skip_sem1)
-            else:
-                out_ins2 = ME.cat(out_skip_tree1, out_b3p8_tree)
+                
+            out_ins2 = ME.cat(out_skip_tree1, out_b3p8_tree, out_skip_sem1)
             out_ins2 = self.block5_ins2(out_ins2)
 
             out_ins2 = self.convtr5p8s2_ins2(out_ins2)
@@ -408,11 +387,8 @@ class MinkUNetWithModules(ResNetBase):
                 out_b2p4_tree = self._apply_cdag(self.cdag_tree_s4, out_skip_tree2, out_b2p4)
             else:
                 out_b2p4_tree = out_b2p4
-            
-            if self.use_cross_decoder_fusion:
-                out_ins2 = ME.cat(out_skip_tree2, out_b2p4_tree, out_skip_sem2)
-            else:
-                out_ins2 = ME.cat(out_skip_tree2, out_b2p4_tree)
+                
+            out_ins2 = ME.cat(out_skip_tree2, out_b2p4_tree, out_skip_sem2)
             out_ins2 = self.block6_ins2(out_ins2)
 
             out_ins2 = self.convtr6p4s2_ins2(out_ins2)
@@ -423,11 +399,8 @@ class MinkUNetWithModules(ResNetBase):
                 out_b1p2_tree = self._apply_cdag(self.cdag_tree_s2, out_skip_tree3, out_b1p2)
             else:
                 out_b1p2_tree = out_b1p2
-            
-            if self.use_cross_decoder_fusion:
-                out_ins2 = ME.cat(out_skip_tree3, out_b1p2_tree, out_skip_sem3)
-            else:
-                out_ins2 = ME.cat(out_skip_tree3, out_b1p2_tree)
+                
+            out_ins2 = ME.cat(out_skip_tree3, out_b1p2_tree, out_skip_sem3)
             out_ins2 = self.block7_ins2(out_ins2)
 
             out_ins2 = self.convtr7p2s2_ins2(out_ins2)
@@ -438,11 +411,8 @@ class MinkUNetWithModules(ResNetBase):
                 out_p1_tree = self._apply_cdag(self.cdag_tree_s1, out_skip_tree4, out_p1)
             else:
                 out_p1_tree = out_p1
-            
-            if self.use_cross_decoder_fusion:
-                out_ins2 = ME.cat(out_skip_tree4, out_p1_tree, out_skip_sem4)
-            else:
-                out_ins2 = ME.cat(out_skip_tree4, out_p1_tree)
+                
+            out_ins2 = ME.cat(out_skip_tree4, out_p1_tree, out_skip_sem4)
             out_ins2 = self.block8_ins2(out_ins2)
             out_ins2 = self.final_ins2(out_ins2)
             
@@ -458,11 +428,8 @@ class MinkUNetWithModules(ResNetBase):
                 out_b3p8_inst = self._apply_cdag(self.cdag_inst_s8, out_skip_inst1, out_b3p8)
             else:
                 out_b3p8_inst = out_b3p8
-            
-            if self.use_cross_decoder_fusion:
-                out_ins1 = ME.cat(out_skip_inst1, out_b3p8_inst, out_skip_tree1)
-            else:
-                out_ins1 = ME.cat(out_skip_inst1, out_b3p8_inst)
+                
+            out_ins1 = ME.cat(out_skip_inst1, out_b3p8_inst, out_skip_tree1)
             out_ins1 = self.block5_ins1(out_ins1)
 
             out_ins1 = self.convtr5p8s2_ins1(out_ins1)
@@ -473,11 +440,8 @@ class MinkUNetWithModules(ResNetBase):
                 out_b2p4_inst = self._apply_cdag(self.cdag_inst_s4, out_skip_inst2, out_b2p4)
             else:
                 out_b2p4_inst = out_b2p4
-            
-            if self.use_cross_decoder_fusion:
-                out_ins1 = ME.cat(out_skip_inst2, out_b2p4_inst, out_skip_tree2)
-            else:
-                out_ins1 = ME.cat(out_skip_inst2, out_b2p4_inst)
+                
+            out_ins1 = ME.cat(out_skip_inst2, out_b2p4_inst, out_skip_tree2)
             out_ins1 = self.block6_ins1(out_ins1)
 
             out_ins1 = self.convtr6p4s2_ins1(out_ins1)
@@ -488,11 +452,8 @@ class MinkUNetWithModules(ResNetBase):
                 out_b1p2_inst = self._apply_cdag(self.cdag_inst_s2, out_skip_inst3, out_b1p2)
             else:
                 out_b1p2_inst = out_b1p2
-            
-            if self.use_cross_decoder_fusion:
-                out_ins1 = ME.cat(out_skip_inst3, out_b1p2_inst, out_skip_tree3)
-            else:
-                out_ins1 = ME.cat(out_skip_inst3, out_b1p2_inst)
+                
+            out_ins1 = ME.cat(out_skip_inst3, out_b1p2_inst, out_skip_tree3)
             out_ins1 = self.block7_ins1(out_ins1)
 
             out_ins1 = self.convtr7p2s2_ins1(out_ins1)
@@ -503,11 +464,8 @@ class MinkUNetWithModules(ResNetBase):
                 out_p1_inst = self._apply_cdag(self.cdag_inst_s1, out_skip_inst4, out_p1)
             else:
                 out_p1_inst = out_p1
-            
-            if self.use_cross_decoder_fusion:
-                out_ins1 = ME.cat(out_skip_inst4, out_p1_inst, out_skip_tree4)
-            else:
-                out_ins1 = ME.cat(out_skip_inst4, out_p1_inst)
+                
+            out_ins1 = ME.cat(out_skip_inst4, out_p1_inst, out_skip_tree4)
             out_ins1 = self.block8_ins1(out_ins1)
             out_ins1 = self.final_ins1(out_ins1)
             
@@ -523,21 +481,21 @@ class MinkUNet14A_Ours(MinkUNetWithModules):
     """MinkUNet14A with HFE, CDAG modules"""
     BLOCK = BasicBlock
     LAYERS = (1, 1, 1, 1, 1, 1, 1, 1)
-    PLANES = (32, 64, 128, 256, 128, 128, 96, 96)  # 与基线MinkUNet14A一致
+    PLANES = (32, 64, 128, 256, 128, 128, 96, 96)
 
 
 class MinkUNet18A_Ours(MinkUNetWithModules):
     """MinkUNet18A with HFE, CDAG modules"""
     BLOCK = BasicBlock
     LAYERS = (2, 2, 2, 2, 2, 2, 2, 2)
-    PLANES = (32, 64, 128, 256, 128, 128, 96, 96)  # 与基线MinkUNet18A一致
+    PLANES = (32, 64, 128, 256, 128, 128, 96, 96)
 
 
 class MinkUNet34A_Ours(MinkUNetWithModules):
     """MinkUNet34A with HFE, CDAG modules"""
     BLOCK = BasicBlock
     LAYERS = (2, 3, 4, 6, 2, 2, 2, 2)
-    PLANES = (32, 64, 128, 256, 256, 128, 64, 64)  # 与基线MinkUNet34A一致
+    PLANES = (32, 64, 128, 256, 256, 128, 64, 64)
 
 
 class MinkUNet14B_Ours(MinkUNetWithModules):
