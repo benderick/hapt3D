@@ -338,10 +338,16 @@ class HFE(nn.Module):
     - LocalDetailBranch → 标准实例解码器
       局部细节 + 边界增强，区分相邻果实
     
+    轻量化设计：
+    为降低计算开销，采用"压缩-处理-恢复"策略：
+    1. 共享压缩层将高维特征投影到低维空间
+    2. 各分支在低维空间进行专门化处理
+    3. 各分支独立恢复到原始维度
+    
     消融配置示例:
         hfe:
           enabled: True
-          mode: "full"  # 或 "dilation_only"
+          reduction: 4  # 通道压缩比
           global_branch:
             dilation: 4
             use_global_pool: True
@@ -374,14 +380,43 @@ class HFE(nn.Module):
         if cfg is None:
             cfg = {}
         
+        # 通道压缩比（轻量化设计的关键）
+        self.reduction = cfg.get('reduction', 4)
+        reduced_channels = max(in_channels // self.reduction, 32)  # 最小32通道
+        
         global_cfg = cfg.get('global_branch', {})
         semantic_cfg = cfg.get('semantic_branch', {})
         local_cfg = cfg.get('local_branch', {})
         
-        # 三个专门化分支，传递各自的配置
-        self.global_branch = GlobalContextBranch(in_channels, out_channels, cfg=global_cfg, D=D)
-        self.semantic_branch = SemanticBranch(in_channels, out_channels, cfg=semantic_cfg, D=D)
-        self.local_branch = LocalDetailBranch(in_channels, out_channels, cfg=local_cfg, D=D)
+        # 共享通道压缩层 - 降低后续分支的计算量
+        self.channel_compress = nn.Sequential(
+            MinkowskiConvolution(in_channels, reduced_channels, kernel_size=1,
+                                dimension=D, bias=False),
+            MinkowskiBatchNorm(reduced_channels),
+            MinkowskiReLU()
+        )
+        
+        # 三个专门化分支，在压缩通道空间中处理
+        self.global_branch = GlobalContextBranch(reduced_channels, reduced_channels, cfg=global_cfg, D=D)
+        self.semantic_branch = SemanticBranch(reduced_channels, reduced_channels, cfg=semantic_cfg, D=D)
+        self.local_branch = LocalDetailBranch(reduced_channels, reduced_channels, cfg=local_cfg, D=D)
+        
+        # 各分支独立的通道恢复层
+        self.expand_global = nn.Sequential(
+            MinkowskiConvolution(reduced_channels, out_channels, kernel_size=1,
+                                dimension=D, bias=False),
+            MinkowskiBatchNorm(out_channels)
+        )
+        self.expand_semantic = nn.Sequential(
+            MinkowskiConvolution(reduced_channels, out_channels, kernel_size=1,
+                                dimension=D, bias=False),
+            MinkowskiBatchNorm(out_channels)
+        )
+        self.expand_local = nn.Sequential(
+            MinkowskiConvolution(reduced_channels, out_channels, kernel_size=1,
+                                dimension=D, bias=False),
+            MinkowskiBatchNorm(out_channels)
+        )
     
     def forward(self, x):
         """
@@ -395,14 +430,17 @@ class HFE(nn.Module):
             feat_semantic: 语义特征 → 语义解码器
             feat_instance: 实例级特征 → 标准实例解码器
         """
-        # 全局上下文分支 → 树木实例分割
-        feat_tree = self.global_branch(x)
+        # 共享通道压缩
+        x_compressed = self.channel_compress(x)
+        
+        # 全局上下文分支 → 树木实例分割（在压缩空间处理后恢复）
+        feat_tree = self.expand_global(self.global_branch(x_compressed))
         
         # 语义分支 → 语义分割
-        feat_semantic = self.semantic_branch(x)
+        feat_semantic = self.expand_semantic(self.semantic_branch(x_compressed))
         
         # 局部细节分支 → 标准实例分割
-        feat_instance = self.local_branch(x)
+        feat_instance = self.expand_local(self.local_branch(x_compressed))
         
         return feat_instance, feat_semantic, feat_tree
 

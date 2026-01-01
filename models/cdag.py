@@ -184,62 +184,60 @@ class DualPoolChannelAttention(nn.Module):
 # ============================================================================
 class MultiScaleSpatialAttention(nn.Module):
     """
-    多尺度空间分解注意力 - 严格参考CPCA (Chen et al., CBM 2024)
+    多尺度空间分解注意力 - 参考CPCA (Chen et al., CBM 2024)
     
     CPCA核心设计: 使用分解卷积捕获多尺度空间信息
-    原始2D设计: 5×5 → (1×7, 7×1) + (1×11, 11×1) + (1×21, 21×1)
+    
+    轻量化设计: 
+    为降低3D稀疏卷积的计算开销，采用通道压缩策略：
+    1. 先将特征压缩到低维空间 (C → C/4)
+    2. 在低维空间进行多尺度处理
+    3. 输出1维注意力权重
     
     3D适配: 使用不同膨胀率的3×3×3卷积模拟多尺度效果
-    - d=1: 局部感受野 (等效小核)
-    - d=2: 中等感受野 (等效中核)  
-    - d=3: 大感受野 (等效大核)
-    
-    参考代码: code/2024/35.0 (Elsevier 2024) CPCA.py 中的 dconv系列
+    - d=1: 局部感受野
+    - d=3: 大感受野 (跳过d=2，减少计算量)
     """
     
-    def __init__(self, in_channels, D=3):
+    def __init__(self, in_channels, reduction=4, D=3):
         """
         参数:
             in_channels: 输入通道数
+            reduction: 通道压缩比
             D: 空间维度
         """
         super(MultiScaleSpatialAttention, self).__init__()
         
-        # 初始卷积 (对应CPCA的dconv5_5)
-        self.conv_init = nn.Sequential(
-            MinkowskiConvolution(in_channels, in_channels, kernel_size=3, 
-                                dilation=1, dimension=D, bias=True),
-            MinkowskiBatchNorm(in_channels),
+        # 压缩通道数，大幅降低后续计算量
+        reduced_channels = max(in_channels // reduction, 16)
+        
+        # 通道压缩
+        self.channel_compress = nn.Sequential(
+            MinkowskiConvolution(in_channels, reduced_channels, kernel_size=1,
+                                dimension=D, bias=True),
+            MinkowskiBatchNorm(reduced_channels),
             MinkowskiReLU()
         )
         
-        # 多尺度分支 (对应CPCA的分解卷积)
-        # 分支1: 小尺度 (d=1, 对应1×7+7×1)
+        # 多尺度分支（在压缩通道空间进行）
+        # 分支1: 小尺度 (d=1)
         self.branch1 = nn.Sequential(
-            MinkowskiConvolution(in_channels, in_channels, kernel_size=3,
+            MinkowskiConvolution(reduced_channels, reduced_channels, kernel_size=3,
                                 dilation=1, dimension=D, bias=True),
-            MinkowskiBatchNorm(in_channels),
+            MinkowskiBatchNorm(reduced_channels),
             MinkowskiReLU()
         )
         
-        # 分支2: 中尺度 (d=2, 对应1×11+11×1)
+        # 分支2: 大尺度 (d=3，跳过d=2减少计算)
         self.branch2 = nn.Sequential(
-            MinkowskiConvolution(in_channels, in_channels, kernel_size=3,
-                                dilation=2, dimension=D, bias=True),
-            MinkowskiBatchNorm(in_channels),
-            MinkowskiReLU()
-        )
-        
-        # 分支3: 大尺度 (d=3, 对应1×21+21×1)
-        self.branch3 = nn.Sequential(
-            MinkowskiConvolution(in_channels, in_channels, kernel_size=3,
+            MinkowskiConvolution(reduced_channels, reduced_channels, kernel_size=3,
                                 dilation=3, dimension=D, bias=True),
-            MinkowskiBatchNorm(in_channels),
+            MinkowskiBatchNorm(reduced_channels),
             MinkowskiReLU()
         )
         
-        # 融合卷积 (对应CPCA的最后conv)
-        self.conv_out = MinkowskiConvolution(in_channels, 1, kernel_size=1, 
+        # 融合并输出注意力权重
+        self.conv_out = MinkowskiConvolution(reduced_channels, 1, kernel_size=1, 
                                              dimension=D, bias=True)
     
     def forward(self, x):
@@ -247,19 +245,18 @@ class MultiScaleSpatialAttention(nn.Module):
         参数:
             x: 输入特征 (SparseTensor)
         返回:
-            空间注意力权重 (SparseTensor) [N, 1]
+            空间注意力权重 [N, 1]
         """
-        # 初始卷积
-        x_init = self.conv_init(x)
+        # 通道压缩
+        x_compressed = self.channel_compress(x)
         
-        # 多尺度分支
-        x1 = self.branch1(x_init)
-        x2 = self.branch2(x_init)
-        x3 = self.branch3(x_init)
+        # 多尺度分支（在压缩空间进行）
+        x1 = self.branch1(x_compressed)
+        x2 = self.branch2(x_compressed)
         
-        # 多尺度融合 (CPCA: 相加)
+        # 多尺度融合
         x_fused = ME.SparseTensor(
-            features=x1.F + x2.F + x3.F + x_init.F,
+            features=x1.F + x2.F + x_compressed.F,
             coordinate_map_key=x1.coordinate_map_key,
             coordinate_manager=x1.coordinate_manager
         )
@@ -276,29 +273,44 @@ class MultiScaleSpatialAttention(nn.Module):
 # ============================================================================
 class PixelAttention(nn.Module):
     """
-    像素注意力 - 严格参考CGAFusion (DEA-Net, TIP 2024)
+    像素注意力 - 参考CGAFusion (DEA-Net, TIP 2024)
     
     CGAFusion核心设计: 将空间注意力和通道注意力结合，生成像素级(点级)注意力
+    
+    轻量化设计:
+    采用瓶颈结构降低计算量: 2C → C/2 → C
     
     原始公式:
         pattn1 = sattn + cattn           # 空间+通道
         pattn2 = σ(Conv([x; pattn1]))    # 像素级融合
-    
-    参考代码: code/2024/46.0 (TIP 2024) CGA.py 中的 PixelAttention
     """
     
-    def __init__(self, in_channels, D=3):
+    def __init__(self, in_channels, reduction=4, D=3):
         """
         参数:
             in_channels: 输入通道数
+            reduction: 中间层压缩比
             D: 空间维度
         """
         super(PixelAttention, self).__init__()
         
-        # 像素级融合卷积 (对应CGAFusion的pa2)
-        # 原文用7x7 groups卷积，3D中用3x3x3
+        # 中间通道数（瓶颈设计）
+        mid_channels = max(in_channels // reduction, 16)
+        
+        # 像素级融合卷积（瓶颈结构）: 2C → mid → C
         self.pixel_conv = nn.Sequential(
-            MinkowskiConvolution(in_channels * 2, in_channels, kernel_size=3,
+            # 压缩: 2C → mid
+            MinkowskiConvolution(in_channels * 2, mid_channels, kernel_size=1,
+                                dimension=D, bias=True),
+            MinkowskiBatchNorm(mid_channels),
+            MinkowskiReLU(),
+            # 空间处理
+            MinkowskiConvolution(mid_channels, mid_channels, kernel_size=3,
+                                dimension=D, bias=True),
+            MinkowskiBatchNorm(mid_channels),
+            MinkowskiReLU(),
+            # 恢复: mid → C
+            MinkowskiConvolution(mid_channels, in_channels, kernel_size=1,
                                 dimension=D, bias=True),
             MinkowskiBatchNorm(in_channels),
         )
@@ -416,13 +428,13 @@ class CDAG(nn.Module):
         
         # 模块3: CPCA多尺度空间注意力 (CBM 2024) - 可选
         if self.use_multiscale:
-            self.multiscale_attn = MultiScaleSpatialAttention(F_l, D)
+            self.multiscale_attn = MultiScaleSpatialAttention(F_l, reduction, D)
         else:
             self.multiscale_attn = None
         
         # 模块4: CGAFusion像素注意力 (TIP 2024) - 可选
         if self.use_pixel:
-            self.pixel_attn = PixelAttention(F_l, D)
+            self.pixel_attn = PixelAttention(F_l, reduction, D)
         else:
             self.pixel_attn = None
         
