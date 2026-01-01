@@ -1,0 +1,147 @@
+# =============================================================================
+# 配置文件: config_ablation_hfe.yaml
+# 描述: 消融实验 - 仅启用HFE模块
+# =============================================================================
+
+experiment:
+  id: "ablation_hfe_only"
+  description: "消融实验: 仅启用HFE模块"
+  seed: 42
+
+# ==================== 数据配置 ====================
+data:
+  path: "data/hopt3d"
+  train_split: "train"
+  val_split: "val"
+  test_split: "test"
+
+# ==================== 网络配置 ====================
+network:
+  backbone: "MinkUNet14A"
+  in_channels: 3
+  out_channels: 256
+  tanh: True
+  embeddings_only: False
+  skip: "full"
+  
+  # === HFE模块配置 (启用) ===
+  hfe:
+    enabled: True
+    global_branch:
+      dilation: 4
+      use_global_pool: True
+      channel_reduction: 4
+    semantic_branch:
+      dilations: [1, 2, 3]
+    local_branch:
+      dilation: 1
+      use_edge_enhance: True
+  
+  # === CDAG模块配置 (禁用) ===
+  cdag:
+    enabled: False
+
+# ==================== 任务配置 ====================
+tasks:
+  semantic_segmentation:
+    enabled: True
+    n_classes: 6
+    ignore_idx: 0
+    stuff_ids: [1, 2, 5]
+    things_ids: [3, 4]
+  
+  instance_segmentation:
+    enabled: True
+    variance: 0.01
+    fg_classes: [3, 4]
+  
+  tree_segmentation:
+    enabled: True
+    variance: 0.5
+
+# ==================== 损失函数配置 ====================
+loss:
+  semantic:
+    type: "cross_entropy"
+    weight: 1.0
+    class_weights: null
+  
+  instance:
+    type: "lovasz"
+    weight: 1.0
+  
+  tree:
+    type: "lovasz"
+    weight: 1.0
+  
+  # === HCL损失配置 (禁用) ===
+  hcl:
+    enabled: False
+    weight: 0.0
+
+# ==================== 训练配置 ====================
+train:
+  max_epoch: 500
+  lr: 0.005
+  weight_decay: 0.01
+  batch_size: 1
+  n_gpus: 1
+  workers: 4
+  voxel_resolution: 0.003
+  overfit: False
+  
+  scheduler:
+    type: "cosine"
+    warmup_epochs: 10
+    min_lr: 1.0e-6
+  
+  optimizer:
+    type: "adamw"
+    betas: [0.9, 0.999]
+    
+  early_stopping:
+    enabled: True
+    monitor: "Metrics_pqs/mpq"
+    patience: 50
+    warmup: 100
+
+# ==================== 数据增强配置 ====================
+transform:
+  enabled: True
+  scale:
+    min_factor: 0.8
+    max_factor: 1.2
+  rotation:
+    max_x: 15
+    max_y: 15
+    max_z: 180
+  shear:
+    max_factor: 0.2
+  downsample:
+    min_ratio: 0.6
+    max_ratio: 1.0
+  color:
+    contrast: [0.8, 1.2]
+    brightness: 0.2
+    hue: 0.15
+    saturation: 0.15
+
+# ==================== 验证/测试配置 ====================
+val:
+  min_n_points_fruit: 60
+  min_n_points_trunk: 250
+  min_n_points_tree: 1000
+  pq_from_epoch: 50
+
+test:
+  dump_metrics: True
+  visualization: True
+  save_predictions: True
+
+# ==================== 聚类配置 ====================
+clustering:
+  algorithm: "hdbscan"
+  hdbscan:
+    min_cluster_size: 50
+    min_samples: 10
+    cluster_selection_epsilon: 0.0

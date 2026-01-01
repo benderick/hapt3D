@@ -8,6 +8,9 @@ class StatDataModule(LightningDataModule):
     def __init__(self, cfg):
         super().__init__()
         self.cfg = cfg
+        # 兼容两种配置格式: data_path (旧) 或 data.path (新)
+        if "data_path" not in self.cfg:
+            self.cfg["data_path"] = self.cfg.get("data", {}).get("path", "data/hopt3d")
         self.setup()
         self.loader = [ self.train_dataloader(), self.val_dataloader() ]
 

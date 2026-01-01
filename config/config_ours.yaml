@@ -1,0 +1,185 @@
+# =============================================================================
+# 配置文件: config_ours.yaml
+# 描述: 本文完整方法配置 (HFE + CDAG + HCL)
+# =============================================================================
+
+experiment:
+  id: "ours_full"                    # 实验标识符
+  description: "本文完整方法: HFE + CDAG + HCL"
+  seed: 42                           # 随机种子
+
+# 兼容性字段
+data_path: "data/hopt3d"
+
+# ==================== 数据配置 ====================
+data:
+  path: "data/hopt3d"                # 数据集路径
+  train_split: "train"               # 训练集划分
+  val_split: "val"                   # 验证集划分
+  test_split: "test"                 # 测试集划分
+
+# ==================== 网络配置 ====================
+network:
+  name: "MinkUNet14A"                # 网络名称 (兼容旧代码)
+  backbone: "MinkUNet14A"            # 骨干网络: MinkUNet14A, MinkUNet18A, MinkUNet34A
+  in_channels: 3                     # 输入通道数 (RGB)
+  out_channels: 256                  # 编码器输出通道数
+  tanh: True                         # 是否对偏移向量使用tanh激活
+  embeddings_only: False             # 是否仅使用嵌入向量
+  skip: "full"                       # 跳跃连接类型: "full", "decoder_only", "none"
+  
+  # === HFE模块配置 ===
+  hfe:
+    enabled: True                    # 是否启用HFE模块
+    # 全局上下文分支 (树木级)
+    global_branch:
+      dilation: 4                    # 膨胀率
+      use_global_pool: True          # 是否使用全局池化
+      channel_reduction: 4           # 通道压缩比
+    # 语义分支
+    semantic_branch:
+      dilations: [1, 2, 3]           # 多尺度膨胀率
+    # 局部细节分支 (实例级)
+    local_branch:
+      dilation: 1                    # 膨胀率
+      use_edge_enhance: True         # 是否使用边界增强
+  
+  # === CDAG模块配置 ===
+  cdag:
+    enabled: True                    # 是否启用CDAG模块
+    # 空间注意力门控
+    spatial_gate:
+      enabled: True
+      intermediate_channels: null    # 中间层通道数，null表示自动计算
+    # 双池化通道注意力
+    channel_attention:
+      enabled: True
+      reduction: 4                   # 通道压缩比
+    # 多尺度空间注意力
+    multiscale_attention:
+      enabled: True
+      dilations: [1, 2, 3]           # 多尺度膨胀率
+    # 像素级注意力
+    pixel_attention:
+      enabled: True
+    # 部署位置
+    apply_to:
+      semantic_decoder: True         # 应用于语义解码器
+      tree_decoder: True             # 应用于树木解码器
+      instance_decoder: True         # 应用于实例解码器
+
+# ==================== 任务配置 ====================
+tasks:
+  semantic_segmentation:
+    enabled: True
+    n_classes: 6                     # 类别数 (void, ground, plant, fruit, trunk, pole)
+    ignore_idx: 0                    # 忽略的类别索引
+    stuff_ids: [1, 2, 5]             # stuff类ID (ground, plant, pole)
+    things_ids: [3, 4]               # things类ID (fruit, trunk)
+  
+  instance_segmentation:
+    enabled: True
+    variance: 0.01                   # 实例分割方差参数
+    fg_classes: [3, 4]               # 前景类别 (fruit, trunk)
+  
+  tree_segmentation:
+    enabled: True
+    variance: 0.5                    # 树木分割方差参数
+
+# ==================== 损失函数配置 ====================
+loss:
+  # 语义分割损失
+  semantic:
+    type: "cross_entropy"            # 损失类型: cross_entropy, focal, lovasz
+    weight: 1.0                      # 损失权重
+    class_weights: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]  # 类别权重，null表示自动计算
+  
+  # 标准实例分割损失
+  instance:
+    type: "lovasz"                   # 损失类型: lovasz, dice
+    weight: 1.0                      # 损失权重
+  
+  # 树木实例分割损失
+  tree:
+    type: "lovasz"                   # 损失类型
+    weight: 1.0                      # 损失权重
+  
+  # === HCL损失配置 ===
+  hcl:
+    enabled: True                    # 是否启用HCL损失
+    weight: 0.1                      # HCL损失权重 (lambda)
+    version: "v1"                    # 版本: "v1"基础版, "v2"增强版
+    point_wise_alpha: 0.1            # v2版本逐点约束权重
+
+# ==================== 训练配置 ====================
+train:
+  max_epoch: 500                     # 最大训练轮数
+  lr: 0.005                          # 初始学习率
+  weight_decay: 0.01                 # 权重衰减
+  batch_size: 1                      # 批大小
+  n_gpus: 1                          # GPU数量
+  workers: 4                         # 数据加载线程数
+  voxel_resolution: 0.003            # 体素分辨率 (3mm)
+  overfit: False                     # 是否过拟合模式（调试用）
+  
+  # 学习率调度
+  scheduler:
+    type: "cosine"                   # 调度器类型: cosine, step, plateau
+    warmup_epochs: 10                # 预热轮数
+    min_lr: 1.0e-6                   # 最小学习率
+  
+  # 优化器
+  optimizer:
+    type: "adamw"                    # 优化器类型: adamw, sgd, adam
+    betas: [0.9, 0.999]              # Adam betas
+    
+  # 早停
+  early_stopping:
+    enabled: True
+    monitor: "Metrics_pqs/mpq"       # 监控指标
+    patience: 50                     # 耐心值
+    warmup: 100                      # 预热轮数
+
+# ==================== 数据增强配置 ====================
+transform:
+  enabled: True
+  # 几何变换
+  scale:
+    min_factor: 0.8
+    max_factor: 1.2
+  rotation:
+    max_x: 15                        # X轴最大旋转角度
+    max_y: 15                        # Y轴最大旋转角度
+    max_z: 180                       # Z轴最大旋转角度
+  shear:
+    max_factor: 0.2
+  # 下采样
+  downsample:
+    min_ratio: 0.6
+    max_ratio: 1.0
+  # 颜色增强
+  color:
+    contrast: [0.8, 1.2]
+    brightness: 0.2
+    hue: 0.15
+    saturation: 0.15
+
+# ==================== 验证/测试配置 ====================
+val:
+  min_n_points_fruit: 60             # 果实最小点数
+  min_n_points_trunk: 250            # 树干最小点数
+  min_n_points_tree: 1000            # 树木最小点数
+  pq_from_epoch: 50                  # 从第N轮开始计算PQ指标
+
+test:
+  dump_metrics: True                 # 是否保存测试指标
+  visualization: True                # 是否可视化
+  save_predictions: True             # 是否保存预测结果
+
+# ==================== 聚类配置 ====================
+clustering:
+  algorithm: "hdbscan"               # 聚类算法: hdbscan, dbscan, meanshift
+  hdbscan:
+    min_cluster_size: 50
+    min_samples: 10
+    cluster_selection_epsilon: 0.0
