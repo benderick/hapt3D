@@ -56,7 +56,7 @@ class HAPT3DDataset(Dataset):
         
         # downsample
         if self.do_augmentation:
-            sampling_ratio = np.random.uniform(self.cfg['transform']['min_downsample'], self.cfg['transform']['max_downsample']) 
+            sampling_ratio = np.random.uniform(self.cfg['transform']['downsample']['min_ratio'], self.cfg['transform']['downsample']['max_ratio']) 
             pcd = pcd.random_down_sample(sampling_ratio=sampling_ratio)
         
         pcd = self.translate_pcd(pcd)
