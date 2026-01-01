@@ -463,14 +463,14 @@ class HAPT3D(LightningModule):
         skip_type = cfg['network']['skip']
         
         # 检查是否使用我们的模块 (HFE/CDAG)
-        use_ours = False
-        hfe_cfg = cfg.get('network', {}).get('hfe', {})
-        cdag_cfg = cfg.get('network', {}).get('cdag', {})
+        use_ours = True
+        # hfe_cfg = cfg.get('network', {}).get('hfe', {})
+        # cdag_cfg = cfg.get('network', {}).get('cdag', {})
         
-        if hfe_cfg and hfe_cfg.get('enabled', False):
-            use_ours = True
-        if cdag_cfg and cdag_cfg.get('enabled', False):
-            use_ours = True
+        # if hfe_cfg and hfe_cfg.get('enabled', False):
+        #     use_ours = True
+        # if cdag_cfg and cdag_cfg.get('enabled', False):
+        #     use_ours = True
         
         # 选择网络模块
         if use_ours or skip_type == 'ours':
