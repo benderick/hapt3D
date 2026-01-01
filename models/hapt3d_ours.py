@@ -99,11 +99,9 @@ class HAPT3D(LightningModule):
         
         if self.use_hcl:
             from utils.hcl_loss import HierarchicalConsistencyLoss
-            # 获取HCL内部配置
-            margin = hcl_cfg.get('margin', 0.5) if hcl_cfg else 0.5
             # 初始化HCL损失模块
-            self.hcl_loss = HierarchicalConsistencyLoss(margin=margin)
-            print(f"[INFO] HCL损失已启用: weight={self.hcl_weight}, margin={margin}")
+            self.hcl_loss = HierarchicalConsistencyLoss()
+            print(f"[INFO] HCL损失已启用: weight={self.hcl_weight}")
         else:
             self.hcl_loss = None
             print("[INFO] HCL损失已禁用")
