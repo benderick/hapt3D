@@ -335,7 +335,7 @@ if __name__ == '__main__':
     
     for b in range(batch_size):
         n_points = num_points_per_sample[b]
-        coords = torch.randint(0, 100, (n_points, 3))
+        coords = torch.randint(0, 100, (n_points, 3), dtype=torch.int)
         batch_idx = torch.full((n_points, 1), b, dtype=torch.int)
         coords = torch.cat([batch_idx, coords], dim=1)
         coords_list.append(coords)
