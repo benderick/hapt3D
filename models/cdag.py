@@ -356,15 +356,29 @@ class CDAG(nn.Module):
         pattn1 = A_spatial + A_channel + A_multiscale  # 三重融合
         pattn2 = PixelAttention(x, pattn1)          # CGAFusion像素注意力
         output = x + pattn2 * x_gated               # CGAFusion残差融合
+    
+    消融配置示例:
+        cdag:
+          enabled: True
+          spatial_gate:
+            enabled: True
+          channel_attention:
+            enabled: True
+            reduction: 4
+          multiscale_attention:
+            enabled: True
+          pixel_attention:
+            enabled: True
     """
     
-    def __init__(self, F_g, F_l, F_int=None, reduction=4, D=3):
+    def __init__(self, F_g, F_l, F_int=None, reduction=4, cfg=None, D=3):
         """
         参数:
             F_g: 门控信号通道数（解码器特征）
             F_l: 输入信号通道数（编码器跳跃特征）
             F_int: 空间注意力中间层通道数
             reduction: 通道注意力压缩比
+            cfg: 配置字典，控制各注意力模块的启用
             D: 空间维度
         """
         super(CDAG, self).__init__()
@@ -374,17 +388,43 @@ class CDAG(nn.Module):
         
         self.F_l = F_l
         
-        # 模块1: Attention Gate式空间门控 (MIA 2018)
+        # 解析配置
+        if cfg is None:
+            cfg = {}
+        
+        spatial_cfg = cfg.get('spatial_gate', {})
+        channel_cfg = cfg.get('channel_attention', {})
+        multiscale_cfg = cfg.get('multiscale_attention', {})
+        pixel_cfg = cfg.get('pixel_attention', {})
+        
+        self.use_spatial = spatial_cfg.get('enabled', True) if isinstance(spatial_cfg, dict) else True
+        self.use_channel = channel_cfg.get('enabled', True) if isinstance(channel_cfg, dict) else True
+        self.use_multiscale = multiscale_cfg.get('enabled', True) if isinstance(multiscale_cfg, dict) else True
+        self.use_pixel = pixel_cfg.get('enabled', True) if isinstance(pixel_cfg, dict) else True
+        
+        # 获取reduction参数
+        reduction = channel_cfg.get('reduction', reduction) if isinstance(channel_cfg, dict) else reduction
+        
+        # 模块1: Attention Gate式空间门控 (MIA 2018) - 始终创建（作为基础）
         self.spatial_gate = SpatialAttentionGate(F_g, F_l, F_int, D)
         
-        # 模块2: CPCA双池化通道注意力 (CBM 2024)
-        self.channel_attn = DualPoolChannelAttention(F_l, reduction)
+        # 模块2: CPCA双池化通道注意力 (CBM 2024) - 可选
+        if self.use_channel:
+            self.channel_attn = DualPoolChannelAttention(F_l, reduction)
+        else:
+            self.channel_attn = None
         
-        # 模块3: CPCA多尺度空间注意力 (CBM 2024)
-        self.multiscale_attn = MultiScaleSpatialAttention(F_l, D)
+        # 模块3: CPCA多尺度空间注意力 (CBM 2024) - 可选
+        if self.use_multiscale:
+            self.multiscale_attn = MultiScaleSpatialAttention(F_l, D)
+        else:
+            self.multiscale_attn = None
         
-        # 模块4: CGAFusion像素注意力 (TIP 2024)
-        self.pixel_attn = PixelAttention(F_l, D)
+        # 模块4: CGAFusion像素注意力 (TIP 2024) - 可选
+        if self.use_pixel:
+            self.pixel_attn = PixelAttention(F_l, D)
+        else:
+            self.pixel_attn = None
         
         # 特征变换 (用于生成pattn1)
         self.attn_transform = MinkowskiConvolution(F_l, F_l, kernel_size=1, 
@@ -408,19 +448,33 @@ class CDAG(nn.Module):
         # ===== 步骤1: Attention Gate空间门控 (MIA 2018) =====
         x_gated, A_spatial = self.spatial_gate(g, x)  # A_spatial: [N, 1]
         
-        # ===== 步骤2: CPCA双池化通道注意力 (CBM 2024) =====
-        A_channel = self.channel_attn(x)  # [B, C]
-        # 广播到每个点
-        batch_indices = x.C[:, 0].long()
-        A_channel_expanded = A_channel[batch_indices]  # [N, C]
+        # ===== 步骤2: CPCA双池化通道注意力 (CBM 2024) - 可选 =====
+        if self.use_channel and self.channel_attn is not None:
+            A_channel = self.channel_attn(x)  # [B, C]
+            # 广播到每个点
+            batch_indices = x.C[:, 0].long()
+            A_channel_expanded = A_channel[batch_indices]  # [N, C]
+        else:
+            A_channel_expanded = torch.ones_like(x.F)  # 不使用时为全1
+            batch_indices = x.C[:, 0].long()
         
-        # ===== 步骤3: CPCA多尺度空间注意力 (CBM 2024) =====
-        A_multiscale = self.multiscale_attn(x)  # [N, 1]
+        # ===== 步骤3: CPCA多尺度空间注意力 (CBM 2024) - 可选 =====
+        if self.use_multiscale and self.multiscale_attn is not None:
+            A_multiscale = self.multiscale_attn(x)  # [N, 1]
+        else:
+            A_multiscale = torch.ones(x.F.shape[0], 1, device=x.F.device)  # 不使用时为全1
         
-        # ===== 步骤4: 三重注意力融合 (CGAFusion风格) =====
-        # pattn1 = A_spatial + A_channel + A_multiscale
-        pattn1_features = (A_spatial * A_channel_expanded) + \
-                          (A_multiscale * A_channel_expanded)
+        # ===== 步骤4: 注意力融合 (根据启用的模块) =====
+        if self.use_spatial:
+            # 使用空间门控结果
+            if self.use_channel or self.use_multiscale:
+                pattn1_features = (A_spatial * A_channel_expanded) + \
+                                  (A_multiscale * A_channel_expanded)
+            else:
+                pattn1_features = A_spatial * torch.ones_like(x.F)
+        else:
+            # 不使用空间门控
+            pattn1_features = A_channel_expanded * A_multiscale
         
         pattn1 = ME.SparseTensor(
             features=pattn1_features * x.F,  # 注意力加权
@@ -429,12 +483,13 @@ class CDAG(nn.Module):
         )
         pattn1 = self.attn_transform(pattn1)
         
-        # ===== 步骤5: CGAFusion像素注意力 (TIP 2024) =====
-        pattn2 = self.pixel_attn(x, pattn1)  # [N, C]
+        # ===== 步骤5: CGAFusion像素注意力 (TIP 2024) - 可选 =====
+        if self.use_pixel and self.pixel_attn is not None:
+            pattn2 = self.pixel_attn(x, pattn1)  # [N, C]
+        else:
+            pattn2 = torch.sigmoid(pattn1.F)  # 简单的sigmoid替代
         
-        # ===== 步骤6: CGAFusion残差融合 =====
-        # 原始公式: result = initial + pattn2 * x + (1 - pattn2) * y
-        # 这里: result = x + pattn2 * x_gated
+        # ===== 步骤6: 残差融合 =====
         result_features = x.F + pattn2 * x_gated.F
         
         result = ME.SparseTensor(

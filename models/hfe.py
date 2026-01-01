@@ -58,31 +58,47 @@ class GlobalContextBranch(nn.Module):
     
     实现方式：
     1. 大膨胀率卷积：扩大感受野覆盖整棵树
-    2. 全局上下文注入：通过全局池化获取场景级信息
-    3. 通道重标定：选择对全局结构敏感的通道
+    2. 全局上下文注入：通过全局池化获取场景级信息（可选）
+    3. 通道重标定：选择对全局结构敏感的通道（可选）
+    
+    消融配置：
+    - dilation: 膨胀率
+    - use_global_pool: 是否使用全局池化
+    - channel_reduction: 通道重标定压缩比（None表示禁用）
     """
     
-    def __init__(self, in_channels, out_channels, D=3):
+    def __init__(self, in_channels, out_channels, cfg=None, D=3):
         super(GlobalContextBranch, self).__init__()
+        
+        # 解析配置
+        if cfg is None:
+            cfg = {}
+        self.dilation = cfg.get('dilation', 4)
+        self.use_global_pool = cfg.get('use_global_pool', True)
+        self.channel_reduction = cfg.get('channel_reduction', 4)
         
         # 大膨胀率卷积 - 扩大感受野
         self.dilated_conv = nn.Sequential(
             MinkowskiConvolution(in_channels, out_channels, kernel_size=3,
-                                dilation=4, dimension=D, bias=False),
+                                dilation=self.dilation, dimension=D, bias=False),
             MinkowskiBatchNorm(out_channels),
             MinkowskiReLU()
         )
         
-        # 全局上下文提取
-        self.global_pool = MinkowskiGlobalPooling()
-        
-        # 通道重标定（SE风格）- 选择全局结构相关通道
-        self.channel_gate = nn.Sequential(
-            nn.Linear(out_channels, out_channels // 4),
-            nn.ReLU(inplace=True),
-            nn.Linear(out_channels // 4, out_channels),
-            nn.Sigmoid()
-        )
+        # 全局上下文提取（可选）
+        if self.use_global_pool and self.channel_reduction:
+            self.global_pool = MinkowskiGlobalPooling()
+            # 通道重标定（SE风格）- 选择全局结构相关通道
+            reduction = self.channel_reduction if self.channel_reduction else 4
+            self.channel_gate = nn.Sequential(
+                nn.Linear(out_channels, out_channels // reduction),
+                nn.ReLU(inplace=True),
+                nn.Linear(out_channels // reduction, out_channels),
+                nn.Sigmoid()
+            )
+        else:
+            self.global_pool = None
+            self.channel_gate = None
         
         # 特征融合
         self.fusion = nn.Sequential(
@@ -95,24 +111,25 @@ class GlobalContextBranch(nn.Module):
         # 大感受野特征
         feat = self.dilated_conv(x)
         
-        # 全局上下文
-        global_context = self.global_pool(feat).F  # [B, C]
-        channel_weights = self.channel_gate(global_context)  # [B, C]
+        # 全局上下文 + 通道重标定（可选）
+        if self.global_pool is not None and self.channel_gate is not None:
+            global_context = self.global_pool(feat).F  # [B, C]
+            channel_weights = self.channel_gate(global_context)  # [B, C]
+            
+            # 通道重标定：将全局权重广播到每个点
+            batch_indices = feat.C[:, 0].long()
+            weights_expanded = channel_weights[batch_indices]  # [N, C]
+            
+            # 应用通道权重
+            enhanced_feat = feat.F * weights_expanded
+            
+            feat = ME.SparseTensor(
+                features=enhanced_feat,
+                coordinate_map_key=feat.coordinate_map_key,
+                coordinate_manager=feat.coordinate_manager
+            )
         
-        # 通道重标定：将全局权重广播到每个点
-        batch_indices = feat.C[:, 0].long()
-        weights_expanded = channel_weights[batch_indices]  # [N, C]
-        
-        # 应用通道权重
-        enhanced_feat = feat.F * weights_expanded
-        
-        out = ME.SparseTensor(
-            features=enhanced_feat,
-            coordinate_map_key=feat.coordinate_map_key,
-            coordinate_manager=feat.coordinate_manager
-        )
-        
-        return self.fusion(out)
+        return self.fusion(feat)
 
 
 class LocalDetailBranch(nn.Module):
@@ -128,55 +145,77 @@ class LocalDetailBranch(nn.Module):
     实现方式：
     1. 小膨胀率/标准卷积：保留局部空间细节
     2. 局部特征归一化：增强局部对比度
-    3. 梯度增强：强化边界响应
+    3. 梯度增强：强化边界响应（可选）
+    
+    消融配置：
+    - dilation: 膨胀率
+    - use_edge_enhance: 是否使用边界增强
     """
     
-    def __init__(self, in_channels, out_channels, D=3):
+    def __init__(self, in_channels, out_channels, cfg=None, D=3):
         super(LocalDetailBranch, self).__init__()
+        
+        # 解析配置
+        if cfg is None:
+            cfg = {}
+        self.dilation = cfg.get('dilation', 1)
+        self.use_edge_enhance = cfg.get('use_edge_enhance', True)
         
         # 标准卷积 - 保留局部细节
         self.local_conv = nn.Sequential(
             MinkowskiConvolution(in_channels, out_channels, kernel_size=3,
-                                dilation=1, dimension=D, bias=False),
+                                dilation=self.dilation, dimension=D, bias=False),
             MinkowskiBatchNorm(out_channels),
             MinkowskiReLU()
         )
         
-        # 边界增强卷积 - 使用3x3卷积模拟梯度算子
-        self.edge_conv = nn.Sequential(
-            MinkowskiConvolution(out_channels, out_channels, kernel_size=3,
-                                dimension=D, bias=False),
-            MinkowskiBatchNorm(out_channels)
-        )
-        
-        # 特征融合
-        self.fusion = nn.Sequential(
-            MinkowskiConvolution(out_channels * 2, out_channels, kernel_size=1,
-                                dimension=D, bias=False),
-            MinkowskiBatchNorm(out_channels),
-            MinkowskiReLU()
-        )
+        # 边界增强卷积（可选）- 使用3x3卷积模拟梯度算子
+        if self.use_edge_enhance:
+            self.edge_conv = nn.Sequential(
+                MinkowskiConvolution(out_channels, out_channels, kernel_size=3,
+                                    dimension=D, bias=False),
+                MinkowskiBatchNorm(out_channels)
+            )
+            # 特征融合（边界增强时需要2倍通道）
+            self.fusion = nn.Sequential(
+                MinkowskiConvolution(out_channels * 2, out_channels, kernel_size=1,
+                                    dimension=D, bias=False),
+                MinkowskiBatchNorm(out_channels),
+                MinkowskiReLU()
+            )
+        else:
+            self.edge_conv = None
+            # 无边界增强时，只需要简单的1x1卷积
+            self.fusion = nn.Sequential(
+                MinkowskiConvolution(out_channels, out_channels, kernel_size=1,
+                                    dimension=D, bias=False),
+                MinkowskiBatchNorm(out_channels),
+                MinkowskiReLU()
+            )
     
     def forward(self, x):
         # 局部特征
         local_feat = self.local_conv(x)
         
-        # 边界增强：原特征与卷积后特征的差异突出边界
-        edge_feat = self.edge_conv(local_feat)
-        edge_enhanced = ME.SparseTensor(
-            features=torch.abs(local_feat.F - edge_feat.F),  # 类似边缘检测
-            coordinate_map_key=local_feat.coordinate_map_key,
-            coordinate_manager=local_feat.coordinate_manager
-        )
-        
-        # 拼接局部特征和边界特征
-        concat_feat = ME.SparseTensor(
-            features=torch.cat([local_feat.F, edge_enhanced.F], dim=1),
-            coordinate_map_key=local_feat.coordinate_map_key,
-            coordinate_manager=local_feat.coordinate_manager
-        )
-        
-        return self.fusion(concat_feat)
+        if self.use_edge_enhance and self.edge_conv is not None:
+            # 边界增强：原特征与卷积后特征的差异突出边界
+            edge_feat = self.edge_conv(local_feat)
+            edge_enhanced = ME.SparseTensor(
+                features=torch.abs(local_feat.F - edge_feat.F),  # 类似边缘检测
+                coordinate_map_key=local_feat.coordinate_map_key,
+                coordinate_manager=local_feat.coordinate_manager
+            )
+            
+            # 拼接局部特征和边界特征
+            concat_feat = ME.SparseTensor(
+                features=torch.cat([local_feat.F, edge_enhanced.F], dim=1),
+                coordinate_map_key=local_feat.coordinate_map_key,
+                coordinate_manager=local_feat.coordinate_manager
+            )
+            return self.fusion(concat_feat)
+        else:
+            # 无边界增强，直接返回融合后的局部特征
+            return self.fusion(local_feat)
 
 
 class SemanticBranch(nn.Module):
@@ -186,67 +225,100 @@ class SemanticBranch(nn.Module):
     设计动机：
     语义分割关注的是"这个点是什么类别"，需要：
     1. 平衡的上下文：既不能太局部（丢失语义），也不能太全局（丢失边界）
-    2. 多尺度融合：结合局部特征和上下文信息
+    2. 多尺度融合：结合局部特征和上下文信息（可选）
     3. 类别区分度：增强不同类别间的特征差异
     
     实现方式：
     1. 中等膨胀率：平衡感受野大小
-    2. 双尺度融合：结合两种尺度的特征
+    2. 双尺度融合：结合两种尺度的特征（可选）
+    
+    消融配置：
+    - dilations: 膨胀率列表，如[1,2,3]表示多尺度，[2]表示单尺度
+    - use_multiscale: 是否使用多尺度融合
     """
     
-    def __init__(self, in_channels, out_channels, D=3):
+    def __init__(self, in_channels, out_channels, cfg=None, D=3):
         super(SemanticBranch, self).__init__()
         
-        # 中等尺度分支
-        self.medium_conv = nn.Sequential(
-            MinkowskiConvolution(in_channels, out_channels, kernel_size=3,
-                                dilation=2, dimension=D, bias=False),
-            MinkowskiBatchNorm(out_channels),
-            MinkowskiReLU()
-        )
+        # 解析配置
+        if cfg is None:
+            cfg = {}
+        self.dilations = cfg.get('dilations', [1, 2, 3])
+        self.use_multiscale = cfg.get('use_multiscale', True)
         
-        # 辅助小尺度分支（用于边界）
-        self.small_conv = nn.Sequential(
-            MinkowskiConvolution(in_channels, out_channels // 2, kernel_size=3,
-                                dilation=1, dimension=D, bias=False),
-            MinkowskiBatchNorm(out_channels // 2),
-            MinkowskiReLU()
-        )
-        
-        # 辅助大尺度分支（用于上下文）
-        self.large_conv = nn.Sequential(
-            MinkowskiConvolution(in_channels, out_channels // 2, kernel_size=3,
-                                dilation=3, dimension=D, bias=False),
-            MinkowskiBatchNorm(out_channels // 2),
-            MinkowskiReLU()
-        )
-        
-        # 多尺度融合
-        self.fusion = nn.Sequential(
-            MinkowskiConvolution(out_channels * 2, out_channels, kernel_size=1,
-                                dimension=D, bias=False),
-            MinkowskiBatchNorm(out_channels),
-            MinkowskiReLU()
-        )
+        if self.use_multiscale and len(self.dilations) >= 3:
+            # 完整多尺度模式
+            # 中等尺度分支
+            self.medium_conv = nn.Sequential(
+                MinkowskiConvolution(in_channels, out_channels, kernel_size=3,
+                                    dilation=self.dilations[1], dimension=D, bias=False),
+                MinkowskiBatchNorm(out_channels),
+                MinkowskiReLU()
+            )
+            
+            # 辅助小尺度分支（用于边界）
+            self.small_conv = nn.Sequential(
+                MinkowskiConvolution(in_channels, out_channels // 2, kernel_size=3,
+                                    dilation=self.dilations[0], dimension=D, bias=False),
+                MinkowskiBatchNorm(out_channels // 2),
+                MinkowskiReLU()
+            )
+            
+            # 辅助大尺度分支（用于上下文）
+            self.large_conv = nn.Sequential(
+                MinkowskiConvolution(in_channels, out_channels // 2, kernel_size=3,
+                                    dilation=self.dilations[2], dimension=D, bias=False),
+                MinkowskiBatchNorm(out_channels // 2),
+                MinkowskiReLU()
+            )
+            
+            # 多尺度融合
+            self.fusion = nn.Sequential(
+                MinkowskiConvolution(out_channels * 2, out_channels, kernel_size=1,
+                                    dimension=D, bias=False),
+                MinkowskiBatchNorm(out_channels),
+                MinkowskiReLU()
+            )
+            self._mode = 'multiscale'
+        else:
+            # 单尺度模式（仅膨胀率差异）
+            dilation = self.dilations[0] if len(self.dilations) == 1 else 2
+            self.medium_conv = nn.Sequential(
+                MinkowskiConvolution(in_channels, out_channels, kernel_size=3,
+                                    dilation=dilation, dimension=D, bias=False),
+                MinkowskiBatchNorm(out_channels),
+                MinkowskiReLU()
+            )
+            self.fusion = nn.Sequential(
+                MinkowskiConvolution(out_channels, out_channels, kernel_size=1,
+                                    dimension=D, bias=False),
+                MinkowskiBatchNorm(out_channels),
+                MinkowskiReLU()
+            )
+            self._mode = 'single'
     
     def forward(self, x):
-        # 中等尺度（主特征）
-        medium_feat = self.medium_conv(x)
-        
-        # 小尺度（边界细节）
-        small_feat = self.small_conv(x)
-        
-        # 大尺度（语义上下文）
-        large_feat = self.large_conv(x)
-        
-        # 多尺度拼接
-        multi_scale = ME.SparseTensor(
-            features=torch.cat([medium_feat.F, small_feat.F, large_feat.F], dim=1),
-            coordinate_map_key=medium_feat.coordinate_map_key,
-            coordinate_manager=medium_feat.coordinate_manager
-        )
-        
-        return self.fusion(multi_scale)
+        if self._mode == 'multiscale':
+            # 中等尺度（主特征）
+            medium_feat = self.medium_conv(x)
+            
+            # 小尺度（边界细节）
+            small_feat = self.small_conv(x)
+            
+            # 大尺度（语义上下文）
+            large_feat = self.large_conv(x)
+            
+            # 多尺度拼接
+            multi_scale = ME.SparseTensor(
+                features=torch.cat([medium_feat.F, small_feat.F, large_feat.F], dim=1),
+                coordinate_map_key=medium_feat.coordinate_map_key,
+                coordinate_manager=medium_feat.coordinate_manager
+            )
+            return self.fusion(multi_scale)
+        else:
+            # 单尺度模式
+            feat = self.medium_conv(x)
+            return self.fusion(feat)
 
 
 class HFE(nn.Module):
@@ -265,13 +337,29 @@ class HFE(nn.Module):
       
     - LocalDetailBranch → 标准实例解码器
       局部细节 + 边界增强，区分相邻果实
+    
+    消融配置示例:
+        hfe:
+          enabled: True
+          mode: "full"  # 或 "dilation_only"
+          global_branch:
+            dilation: 4
+            use_global_pool: True
+            channel_reduction: 4
+          semantic_branch:
+            dilations: [1, 2, 3]
+            use_multiscale: True
+          local_branch:
+            dilation: 1
+            use_edge_enhance: True
     """
     
-    def __init__(self, in_channels, out_channels=None, D=3):
+    def __init__(self, in_channels, out_channels=None, cfg=None, D=3):
         """
         参数:
             in_channels: 输入特征通道数（编码器输出）
             out_channels: 输出特征通道数（默认与输入相同）
+            cfg: 配置字典，控制各分支的消融开关
             D: 空间维度
         """
         super(HFE, self).__init__()
@@ -282,10 +370,18 @@ class HFE(nn.Module):
         self.in_channels = in_channels
         self.out_channels = out_channels
         
-        # 三个专门化分支
-        self.global_branch = GlobalContextBranch(in_channels, out_channels, D)
-        self.semantic_branch = SemanticBranch(in_channels, out_channels, D)
-        self.local_branch = LocalDetailBranch(in_channels, out_channels, D)
+        # 解析配置
+        if cfg is None:
+            cfg = {}
+        
+        global_cfg = cfg.get('global_branch', {})
+        semantic_cfg = cfg.get('semantic_branch', {})
+        local_cfg = cfg.get('local_branch', {})
+        
+        # 三个专门化分支，传递各自的配置
+        self.global_branch = GlobalContextBranch(in_channels, out_channels, cfg=global_cfg, D=D)
+        self.semantic_branch = SemanticBranch(in_channels, out_channels, cfg=semantic_cfg, D=D)
+        self.local_branch = LocalDetailBranch(in_channels, out_channels, cfg=local_cfg, D=D)
     
     def forward(self, x):
         """
