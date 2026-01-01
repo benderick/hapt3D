@@ -45,7 +45,7 @@ class HAPT3D(LightningModule):
         self.epochs = cfg['train']['max_epoch']
         self.lr = cfg['train']['lr']
         self.voxel_resolution = cfg['train']['voxel_resolution']
-        self.ignore_index = cfg['train']['ignore_idx']
+        self.ignore_index = cfg['tasks']['semantic_segmentation']['ignore_idx']
         self.embeddings_only = cfg['network']['embeddings_only']
         self.model = self.init_model(cfg)
         self.w_ins1_loss = 1
