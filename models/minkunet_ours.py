@@ -32,7 +32,7 @@ class MinkUNetWithModules(ResNetBase):
     PLANES = None
     DILATIONS = (1, 1, 1, 1, 1, 1, 1, 1)
     LAYERS = (2, 2, 2, 2, 2, 2, 2, 2)
-    PLANES = (32, 64, 128, 256, 256, 128, 96, 96)
+    PLANES = (32, 64, 128, 256, 128, 128, 96, 96)  # 默认与MinkUNet18A一致
     INIT_DIM = 32
     OUT_TENSOR_STRIDE = 1
 
@@ -523,18 +523,21 @@ class MinkUNet14A_Ours(MinkUNetWithModules):
     """MinkUNet14A with HFE, CDAG modules"""
     BLOCK = BasicBlock
     LAYERS = (1, 1, 1, 1, 1, 1, 1, 1)
+    PLANES = (32, 64, 128, 256, 128, 128, 96, 96)  # 与基线MinkUNet14A一致
 
 
 class MinkUNet18A_Ours(MinkUNetWithModules):
     """MinkUNet18A with HFE, CDAG modules"""
     BLOCK = BasicBlock
     LAYERS = (2, 2, 2, 2, 2, 2, 2, 2)
+    PLANES = (32, 64, 128, 256, 128, 128, 96, 96)  # 与基线MinkUNet18A一致
 
 
 class MinkUNet34A_Ours(MinkUNetWithModules):
     """MinkUNet34A with HFE, CDAG modules"""
     BLOCK = BasicBlock
     LAYERS = (2, 3, 4, 6, 2, 2, 2, 2)
+    PLANES = (32, 64, 128, 256, 256, 128, 64, 64)  # 与基线MinkUNet34A一致
 
 
 class MinkUNet14B_Ours(MinkUNetWithModules):
@@ -552,4 +555,4 @@ class MinkUNet18B_Ours(MinkUNetWithModules):
 class MinkUNet34B_Ours(MinkUNetWithModules):
     BLOCK = BasicBlock
     LAYERS = (2, 3, 4, 6, 2, 2, 2, 2)
-    PLANES = (32, 64, 128, 256, 128, 128, 96, 96)
+    PLANES = (32, 64, 128, 256, 256, 128, 64, 64)
