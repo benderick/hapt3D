@@ -218,14 +218,14 @@ def print_ablation_table():
 
 def run_single_experiment(name: str, config_path: str, desc: str, gpus: int = 1):
     """运行单个实验"""
-    cmd = ['python', 'train_v2.py', '-c', config_path, '--gpus', str(gpus)]
+    cmd = ['python', 'train_v2.py', '-c', config_path, '--gpus', str(gpus), '--epochs', str(2)]
     
-    print("\n" + "=" * 70)
+    print("\n" + "=" * 70 + "+" * 50)
     print(f"实验: {name}")
     print(f"描述: {desc}")
     print(f"配置: {config_path}")
     print(f"命令: {' '.join(cmd)}")
-    print("=" * 70 + "\n")
+    print("=" * 70 + "+" * 50 + "\n")
     
     try:
         subprocess.run(cmd, check=True)

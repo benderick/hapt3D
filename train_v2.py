@@ -151,7 +151,7 @@ def print_experiment_header(cfg: ConfigManager):
 
 @click.command()
 @click.option('--config', '-c', type=str, required=True,
-              help='配置文件路径 (.yaml)')
+              help='配置文件路径 (.yaml)', default='config/config_ours.yaml')
 @click.option('--weights', '-w', type=str, default=None,
               help='预训练权重路径 (.ckpt)，仅加载权重不恢复训练')
 @click.option('--checkpoint', '-ckpt', type=str, default=None,

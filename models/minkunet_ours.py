@@ -63,12 +63,6 @@ class MinkUNetWithModules(ResNetBase):
             self.use_cdag = False
             self.hfe_cfg = {}
             self.cdag_cfg = {}
-        elif hasattr(cfg, 'get'):
-            # ConfigManager对象
-            self.use_hfe = cfg.get('network.hfe.enabled', False)
-            self.use_cdag = cfg.get('network.cdag.enabled', False)
-            self.hfe_cfg = cfg.get('network.hfe', {}) or {}
-            self.cdag_cfg = cfg.get('network.cdag', {}) or {}
         elif isinstance(cfg, dict):
             # 原始字典
             network_cfg = cfg.get('network', {})
@@ -78,6 +72,13 @@ class MinkUNetWithModules(ResNetBase):
             self.use_cdag = cdag_cfg.get('enabled', False)
             self.hfe_cfg = hfe_cfg
             self.cdag_cfg = cdag_cfg
+        elif hasattr(cfg, 'get'):
+            # ConfigManager对象
+            self.use_hfe = cfg.get('network.hfe.enabled', False)
+            self.use_cdag = cfg.get('network.cdag.enabled', False)
+            print(self.use_cdag)
+            self.hfe_cfg = cfg.get('network.hfe', {}) or {}
+            self.cdag_cfg = cfg.get('network.cdag', {}) or {}
         else:
             self.use_hfe = False
             self.use_cdag = False
