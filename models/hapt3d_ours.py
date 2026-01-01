@@ -439,10 +439,14 @@ class HAPT3D(LightningModule):
             ins_target = ins_targets[batch_id].squeeze()
             pan_pred = torch.vstack((sem_pred, ins_pred)).T
             pan_target = torch.vstack((sem_target, ins_target)).T
+            # 将点云数据重塑为伪图像格式 (B, H, W, 2)，其中 H=N, W=1
+            # torchmetrics PanopticQuality 期望4D输入
+            pan_pred = pan_pred.unsqueeze(0).unsqueeze(2)  # (1, N, 1, 2)
+            pan_target = pan_target.unsqueeze(0).unsqueeze(2)  # (1, N, 1, 2)
             if hierarchy:
-                self.pq_h(pan_pred.unsqueeze(0),pan_target.unsqueeze(0))
+                self.pq_h(pan_pred, pan_target)
             else:
-                self.pq(pan_pred.unsqueeze(0),pan_target.unsqueeze(0))
+                self.pq(pan_pred, pan_target)
 
     def configure_optimizers(self):
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.lr)
