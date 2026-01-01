@@ -7,38 +7,38 @@ def get_geom_aug(config):
 
     # 1. Scale
     I = np.eye(4)
-    scale = np.random.uniform(config['transform']['min_scalefactor'],
-                            config['transform']['max_scalefactor'], size=(1,4)) 
+    scale = np.random.uniform(config['transform']['scale']['min_factor'],
+                            config['transform']['scale']['max_factor'], size=(1,4)) 
     # don't scale the homogeneous coord !
     scale[0,-1] = 1
     T = scale*I
 
     # 2. Rotation around Z
-    angle = np.random.uniform(-config['transform']['max_rotation_angle_degree_z']* np.pi/180.0,
-                            +config['transform']['max_rotation_angle_degree_z']* np.pi/180.0)
+    angle = np.random.uniform(-config['transform']['rotation']['max_z']* np.pi/180.0,
+                            +config['transform']['rotation']['max_z']* np.pi/180.0)
     R = o3d.geometry.get_rotation_matrix_from_xyz(np.asarray([[0,0,angle]]).T)
     T_R = np.eye(4)
     T_R[0:3,0:3] = R
     T = T_R @ T
 
     # 3. Rotation around Y
-    angle = np.random.uniform(-config['transform']['max_rotation_angle_degree_y']* np.pi/180.0,
-                            +config['transform']['max_rotation_angle_degree_y']* np.pi/180.0)
+    angle = np.random.uniform(-config['transform']['rotation']['max_y']* np.pi/180.0,
+                            +config['transform']['rotation']['max_y']* np.pi/180.0)
     R = o3d.geometry.get_rotation_matrix_from_xyz(np.asarray([[0,angle,0]]).T)
     T_R = np.eye(4)
     T_R[0:3,0:3] = R
     T = T_R @ T
 
     # 4. Rotation around X
-    angle = np.random.uniform(-config['transform']['max_rotation_angle_degree_x']* np.pi/180.0,
-                            +config['transform']['max_rotation_angle_degree_x']* np.pi/180.0)
+    angle = np.random.uniform(-config['transform']['rotation']['max_x']* np.pi/180.0,
+                            +config['transform']['rotation']['max_x']* np.pi/180.0)
     R = o3d.geometry.get_rotation_matrix_from_xyz(np.asarray([[angle,0,0]]).T)
     T_R = np.eye(4)
     T_R[0:3,0:3] = R
     T = T_R @ T
 
     # 5. Shear 
-    shear = np.random.uniform(-config['transform']['max_shear'], +config['transform']['max_shear'], size=(3,)) 
+    shear = np.random.uniform(-config['transform']['shear']['max_factor'], +config['transform']['shear']['max_factor'], size=(3,)) 
     T_shear = np.eye(4)
     T_shear[0,1] = shear[0] # xy
     T_shear[0,2] = shear[1] # xz
@@ -53,15 +53,15 @@ def color_jitter(config, colors):
     # a > 1 = more contrast
     # 0 < a < 1 = less contrast
     # b = brightness
-    contrast = np.random.uniform(config['transform']['min_contrast'], config['transform']['max_contrast']) 
-    brightness = np.random.uniform(-config['transform']['max_brightness'], +config['transform']['max_brightness']) 
+    contrast = np.random.uniform(config['transform']['color']['contrast'][0], config['transform']['color']['contrast'][1]) 
+    brightness = np.random.uniform(-config['transform']['color']['brightness'], +config['transform']['color']['brightness']) 
     colors = contrast * colors + brightness
     try:
         hsv = rgb_to_hsv(colors.numpy())
     except IndexError:
         return colors
-    hue = np.random.uniform(-config['transform']['max_hue'], config['transform']['max_hue']) 
-    saturation = np.random.uniform(-config['transform']['max_saturation'], config['transform']['max_saturation']) 
+    hue = np.random.uniform(-config['transform']['color']['hue'], config['transform']['color']['hue']) 
+    saturation = np.random.uniform(-config['transform']['color']['saturation'], config['transform']['color']['saturation']) 
     hsv[:, 0] += hue
     hsv[:, 1] += saturation
     colors = o3d.core.Tensor(hsv_to_rgb(hsv))
