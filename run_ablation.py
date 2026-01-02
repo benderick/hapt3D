@@ -218,7 +218,7 @@ def print_ablation_table():
 
 def run_single_experiment(name: str, config_path: str, desc: str, gpus: int = 1):
     """运行单个实验"""
-    cmd = ['python', 'train_v2.py', '-c', config_path, '--gpus', str(gpus), '--epochs', str(2)]
+    cmd = ['python', 'train_v2.py', '-c', config_path, '--gpus', str(gpus)]
     
     print("\n" + "=" * 70 + "+" * 50)
     print(f"实验: {name}")

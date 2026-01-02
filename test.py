@@ -6,6 +6,7 @@ import yaml
 import datasets.dataloader as dataloader
 from models.hapt3d_ours import HAPT3D as HAPT3D
 from pytorch_lightning import loggers as pl_loggers
+torch.set_float32_matmul_precision('medium')
 
 @click.command()
 ### Add your options here
