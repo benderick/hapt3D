@@ -14,12 +14,12 @@ torch.set_float32_matmul_precision('medium')
               '-c',
               type=str,
               help='path to the config file (.yaml)',
-              default=join(dirname(abspath(__file__)),'config/config.yaml'))
+              default='config/config_baseline.yaml')
 @click.option('--weights',
               '-w',
               type=str,
               help='path to pretrained weights (.ckpt). Use this flag if you just want to load the weights from the checkpoint file without resuming training.',
-              default=None)
+              default='experiments/baseline/lightning_logs/version_0/checkpoints/best-miou-epoch-06.ckpt')
 @click.option('--data_path',
               '-d',
               type=str,
@@ -49,7 +49,7 @@ def main(config, weights, data_path):
     cfg['val']['min_n_points_tree'] = 1614  # 树木最小点数
 
     # 加载模型
-    model = HAPT3D.load_from_checkpoint(weights, cfg=cfg, viz=False)
+    model = HAPT3D.load_from_checkpoint(weights, cfg=cfg, viz=True)
 
     # 设置日志
     tb_logger = pl_loggers.TensorBoardLogger('evaluations/'+cfg['experiment']['id'],

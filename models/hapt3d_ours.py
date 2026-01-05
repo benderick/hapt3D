@@ -439,7 +439,6 @@ class HAPT3D(LightningModule):
             ins_target = ins_targets[batch_id].squeeze()
             pan_pred = torch.vstack((sem_pred, ins_pred)).T
             pan_target = torch.vstack((sem_target, ins_target)).T
-            print(pan_pred.shape, pan_target.shape)
             try:
                 if hierarchy:
                     self.pq_h(pan_pred.unsqueeze(0), pan_target.unsqueeze(0))
